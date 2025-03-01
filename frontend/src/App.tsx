@@ -113,7 +113,6 @@ const App: React.FC = () => {
     // Display exercise count
     ctx.fillStyle = "white";
     ctx.font = "20px Arial";
-    ctx.fillText(`${selectedExercise} Count: ${squatCountRef.current}`, 50, 50);
   };
 
   useEffect(() => {
@@ -159,6 +158,9 @@ const App: React.FC = () => {
         <option value="pushup">Push-up</option>
         <option value="lunge">Lunge</option>
       </select>
+      <div style={{ fontSize: "35px"}}>
+        {selectedExercise} Count: {squatCountRef.current}
+      </div>
 
       <div style={{ position: "relative", width: 640, height: 480 }}>
         <Webcam ref={webcamRef} style={{ position: "absolute", left: 0, top: 0, zIndex: 1 }} />
