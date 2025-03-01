@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import Webcam from "react-webcam";
-import { Pose, POSE_LANDMARKS, Results, drawConnectors, drawLandmarks } from "@mediapipe/pose";
-import { drawPose } from "@mediapipe/drawing_utils";
+import { Pose, POSE_CONNECTIONS, Results } from "@mediapipe/pose";
+import { drawConnectors, drawLandmarks } from "@mediapipe/drawing_utils";
 
 const App: React.FC = () => {
   const webcamRef = useRef<Webcam>(null);
@@ -15,7 +15,7 @@ const App: React.FC = () => {
       });
 
       poseInstance.setOptions({
-        modelComplexity: 1, // 0 = fastest, 1 = balanced, 2 = most accurate
+        modelComplexity: 1,
         smoothLandmarks: true,
         enableSegmentation: false,
         minDetectionConfidence: 0.5,
@@ -35,19 +35,35 @@ const App: React.FC = () => {
     if (!ctx || !results.poseLandmarks) return;
 
     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-    drawConnectors(ctx, results.poseLandmarks, POSE_LANDMARKS.LEFT, { color: "red" });
-    drawConnectors(ctx, results.poseLandmarks, POSE_LANDMARKS.RIGHT, { color: "blue" });
+
+    // Draw pose connections and landmarks
+    drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, { color: "red" });
     drawLandmarks(ctx, results.poseLandmarks, { color: "green", radius: 3 });
   };
 
   useEffect(() => {
     if (!pose || !webcamRef.current || !webcamRef.current.video) return;
     const video = webcamRef.current.video;
-    const detect = async () => {
-      await pose.send({ image: video });
-      requestAnimationFrame(detect);
+
+    const detectPose = async () => {
+      try {
+        await pose.send({ image: video });
+        requestAnimationFrame(detectPose);
+      } catch (error) {
+        console.error("Pose detection error:", error);
+      }
     };
-    detect();
+
+    // ✅ Ensure video is fully loaded before starting detection
+    if (video.readyState < 2) {
+      console.warn("Video not ready yet. Waiting...");
+      setTimeout(() => {
+        if (video.readyState >= 2) detectPose(); // Now detectPose() is properly defined before being called
+      }, 500);
+      return;
+    }
+
+    detectPose();
   }, [pose]);
 
   return (
