@@ -134,7 +134,8 @@ const App: React.FC = () => {
       console.warn("Video not ready yet. Waiting...");
       setTimeout(() => {
         if (video.readyState >= 2) detectPose();
-      }, 500);
+      }, 1000);
+      console.log("Video state:", video.readyState);
       return;
     }
 
