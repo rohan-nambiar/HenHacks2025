@@ -5,7 +5,6 @@ import Confetti from 'react-confetti';
 
 const PhysicalTherapy: React.FC = () => {
   const [selectedExercise, setSelectedExercise] = useState<'balance' | 'stretch' | 'resistance'>('balance');
-  const [isBalanced, setIsBalanced] = useState<boolean>(true);
   const [repCount, setRepCount] = useState<number>(0);
   const [showCelebration, setShowCelebration] = useState<boolean>(false);
 
@@ -13,9 +12,7 @@ const PhysicalTherapy: React.FC = () => {
     setRepCount(newCount);
   };
 
-  const onBalanceChange = (isBalanced: boolean) => {
-    setIsBalanced(isBalanced);
-  };
+
 
   useEffect(() => {
     if (repCount > 0 && repCount % 5 === 0) {
@@ -74,7 +71,7 @@ const PhysicalTherapy: React.FC = () => {
       
       <div className="border border-gray-300 rounded-lg overflow-hidden">
         {selectedExercise === "balance" && (
-          <BalanceTracker onBalanceChange={onBalanceChange} />
+          <BalanceTracker/>
         )}
         {selectedExercise === "resistance" && (
           <ResistanceTracker onRepCountChange={handleRepCountChange} />
