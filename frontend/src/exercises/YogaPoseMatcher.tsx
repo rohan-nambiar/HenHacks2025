@@ -90,7 +90,7 @@ const angleThreshold = 10;
 const getObjectFromLocalStorage = (key: string): any | null => {
   const item = localStorage.getItem(key);
   if (item) {
-      return JSON.parse(item);
+    return JSON.parse(item);
   }
   return null;
 };
@@ -104,13 +104,13 @@ const YogaPoseMatcher: React.FC = () => {
   const savedPoseRef = useRef<{ landmarks: any[] } | null>(null);
   const [savePoseButtonDisabled, setSavePostButtonDisabled] = useState<boolean>(false);
   const myObject = getObjectFromLocalStorage("allYogaPose");
-  const [poseOptions, setPoseOptions] = useState<{ value: any[]; label: string}[] | null>(myObject || []);
-  const [poseOptionSelected, setPoseOptionSelected] = useState<{ value: any[]; label: string} | null>(null);
+  const [poseOptions, setPoseOptions] = useState<{ value: any[]; label: string }[] | null>(myObject || []);
+  const [poseOptionSelected, setPoseOptionSelected] = useState<{ value: any[]; label: string } | null>(null);
 
   // Timer state for countdown text.
   const [timerText, setTimerText] = useState<string>("");
   const [showTimer, setShowTimer] = useState<boolean>(false);
-  
+
   useEffect(() => {
     savedPoseRef.current = savedPose;
   }, [savedPose]);
@@ -306,7 +306,7 @@ const YogaPoseMatcher: React.FC = () => {
 
   // Delete a saved pose.
   const deletePose = (selected: any) => {
-    if (!selected || !poseOptions || poseOptions.length==0) return;
+    if (!selected || !poseOptions || poseOptions.length == 0) return;
     const newPoseOptions = poseOptions.filter((option) => option.value !== selected.value);
     setPoseOptions(newPoseOptions);
     // remove the pose from local storage
@@ -333,7 +333,7 @@ const YogaPoseMatcher: React.FC = () => {
           setTimerText(`Snap!`);
           clearInterval(interval);
           setShowTimer(false);
-          saveRef(currentLandmarksRef.current);  
+          saveRef(currentLandmarksRef.current);
           setSavePostButtonDisabled(false);
         }
       }, 1000);
@@ -350,44 +350,60 @@ const YogaPoseMatcher: React.FC = () => {
       </div>
       <div className="mb-4 space-y-4">
         <button
-          onClick={savePose.bind(null, 0)}
-          className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded"
+          onClick={() => savePose(0)}
           disabled={!currentLandmarksRef.current || currentLandmarksRef.current.length === 0 || savePoseButtonDisabled}
+          className={`py-2 px-4 rounded ${!currentLandmarksRef.current || currentLandmarksRef.current.length === 0 || savePoseButtonDisabled
+            ? "bg-gray-400 text-gray-200 cursor-not-allowed"
+            : "bg-green-600 hover:bg-green-700 text-white"
+            }`}
         >
           Take Ref Pose
         </button>
+
         <button
-          onClick={savePose.bind(null, 3)}
-          className="bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded ml-2"
+          onClick={() => savePose(3)}
           disabled={!currentLandmarksRef.current || currentLandmarksRef.current.length === 0 || savePoseButtonDisabled}
+          className={`py-2 px-4 rounded ml-2 ${!currentLandmarksRef.current || currentLandmarksRef.current.length === 0 || savePoseButtonDisabled
+            ? "bg-gray-400 text-gray-200 cursor-not-allowed"
+            : "bg-yellow-600 hover:bg-yellow-700 text-white"
+            }`}
         >
           Wait 3 Secs
         </button>
+
         <button
-          onClick={savePose.bind(null, 10)}
-          className="bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded ml-2"
+          onClick={() => savePose(10)}
           disabled={!currentLandmarksRef.current || currentLandmarksRef.current.length === 0 || savePoseButtonDisabled}
+          className={`py-2 px-4 rounded ml-2 ${!currentLandmarksRef.current || currentLandmarksRef.current.length === 0 || savePoseButtonDisabled
+            ? "bg-gray-400 text-gray-200 cursor-not-allowed"
+            : "bg-yellow-600 hover:bg-yellow-700 text-white"
+            }`}
         >
           Wait 10 Secs
         </button>
+
         <button
-          onClick={deletePose.bind(null, poseOptionSelected)}
+          onClick={() => deletePose(poseOptionSelected)}
           disabled={!poseOptionSelected}
-          className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded"
+          className={`py-2 px-4 rounded ml-2 ${poseOptionSelected
+              ? "bg-red-600 hover:bg-red-700 text-white"
+              : "bg-gray-400 text-gray-200 cursor-not-allowed"
+            }`}
         >
           Delete selected Pose
         </button>
+
+
         <Select
           name="selectedPose"
           isSearchable={true}
           classNamePrefix="select"
           className="bg-green-600 hover:bg-green-700 py-2 px-4 rounded"
           options={poseOptions}
-          isDisabled={!poseOptionSelected}
           value={poseOptionSelected}
           onChange={(selected) => setPoseReference(selected)}
           placeholder="Select a pose as reference"
-          />
+        />
       </div>
       {/* Overlay the countdown on top of the canvas */}
       <div className="border border-gray-300 rounded-lg overflow-hidden relative">
@@ -396,9 +412,9 @@ const YogaPoseMatcher: React.FC = () => {
         {showTimer && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <span className="countdown font-mono text-6xl">
-              <span 
+              <span
                 style={{ "--value": timerText } as React.CSSProperties}
-                aria-live="polite" 
+                aria-live="polite"
                 aria-label={`Countdown: ${timerText}`}
                 className="bg-white/75 px-4 py-2 rounded shadow"
               >
