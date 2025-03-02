@@ -3,7 +3,6 @@ import { Pose, POSE_CONNECTIONS, Results } from '@mediapipe/pose';
 import * as cam from '@mediapipe/camera_utils';
 import { drawConnectors, drawLandmarks } from '@mediapipe/drawing_utils';
 
-// The joints we care about:
 const angleJoints: { [key: string]: [number, number, number] } = {
   rightElbow: [16, 14, 12],
   rightShoulder: [14, 12, 24],
@@ -15,7 +14,7 @@ const angleJoints: { [key: string]: [number, number, number] } = {
   leftKnee: [23, 25, 27],
 };
 
-// Calculate angle for a single joint
+// -- Helpers --
 function calculateAngle(A: any, B: any, C: any): number {
   const radians =
     Math.atan2(C.y - B.y, C.x - B.x) - Math.atan2(A.y - B.y, A.x - B.x);
@@ -24,7 +23,6 @@ function calculateAngle(A: any, B: any, C: any): number {
   return angle;
 }
 
-// Compute angles for all tracked joints
 function computePoseAngles(landmarks: any[]): Record<string, number> {
   const angles: Record<string, number> = {};
   for (const [jointName, [idxA, idxB, idxC]] of Object.entries(angleJoints)) {
@@ -38,16 +36,15 @@ function computePoseAngles(landmarks: any[]): Record<string, number> {
   return angles;
 }
 
-// Check if we are near a specific pose for all joints
-function isNearPose(
+function isPoseMatch(
   liveAngles: Record<string, number>,
-  targetAngles: Record<string, number>,
-  tolerance = 10
+  refAngles: Record<string, number>,
+  threshold = 15
 ): boolean {
   for (const jointName of Object.keys(angleJoints)) {
     const live = liveAngles[jointName] ?? 0;
-    const target = targetAngles[jointName] ?? 0;
-    if (Math.abs(live - target) > tolerance) {
+    const ref = refAngles[jointName] ?? 0;
+    if (Math.abs(live - ref) > threshold) {
       return false;
     }
   }
@@ -58,49 +55,47 @@ const NewMovement: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // This ref will hold the *latest* detected pose landmarks every frame:
-  const latestLandmarksRef = useRef<any[] | null>(null);
+  // -- Pose references/state --
+  const [startPose, setStartPose] = useState<{ landmarks: any[] } | null>(null);
+  const [endPose, setEndPose] = useState<{ landmarks: any[] } | null>(null);
 
-  // Start & End pose data
+  // We’ll keep the angles in state as well:
   const [startPoseAngles, setStartPoseAngles] = useState<Record<string, number> | null>(null);
   const [endPoseAngles, setEndPoseAngles] = useState<Record<string, number> | null>(null);
 
-  // We'll keep them in refs so onResults can see them
+  // And we also store them in refs so that the onResults callback
+  // can read the *latest* values without re-initializing Pose.
   const startPoseAnglesRef = useRef<Record<string, number> | null>(null);
   const endPoseAnglesRef = useRef<Record<string, number> | null>(null);
+
   useEffect(() => {
     startPoseAnglesRef.current = startPoseAngles;
   }, [startPoseAngles]);
+
   useEffect(() => {
     endPoseAnglesRef.current = endPoseAngles;
   }, [endPoseAngles]);
 
-  // For UI, just to say "pose saved"
-  const [startPoseSaved, setStartPoseSaved] = useState(false);
-  const [endPoseSaved, setEndPoseSaved] = useState(false);
-
-  // Min & max angles derived from Start & End
-  const [minAngles, setMinAngles] = useState<Record<string, number> | null>(null);
-  const [maxAngles, setMaxAngles] = useState<Record<string, number> | null>(null);
-
-  // Rep counting
+  // -- Rep tracking / user pose state --
   const [userPoseState, setUserPoseState] = useState<"AT_START" | "AT_END" | "IN_BETWEEN">("IN_BETWEEN");
   const [repCount, setRepCount] = useState<number>(0);
 
+  // Same pattern: store in a ref so the callback can see the latest:
   const userPoseStateRef = useRef<"AT_START" | "AT_END" | "IN_BETWEEN">("IN_BETWEEN");
   useEffect(() => {
     userPoseStateRef.current = userPoseState;
   }, [userPoseState]);
 
-  // UI states for countdown
+  // -- Timer UI --
   const [timerText, setTimerText] = useState<string>("");
   const [showTimer, setShowTimer] = useState<boolean>(false);
   const [savePoseButtonDisabled, setSavePoseButtonDisabled] = useState<boolean>(false);
 
-  // Initialize MediaPipe Pose once
+  // -- MediaPipe Pose initialization (ONLY ONCE) --
   useEffect(() => {
     if (!videoRef.current) return;
 
+    // Create Pose instance only once
     const pose = new Pose({
       locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
     });
@@ -113,60 +108,52 @@ const NewMovement: React.FC = () => {
       minTrackingConfidence: 0.5,
     });
 
+    // The callback that runs every frame
     pose.onResults((results: Results) => {
-      // Log so you can see if the model is actually detecting you:
-      console.log("Mediapipe results:", results.poseLandmarks);
+      if (!results.poseLandmarks || !canvasRef.current) return;
 
-      if (!results.poseLandmarks || !canvasRef.current) {
-        return;
-      }
-
-      // Save the latest landmarks each frame:
-      latestLandmarksRef.current = results.poseLandmarks;
-
-      // Draw the skeleton
       const ctx = canvasRef.current.getContext('2d');
       if (!ctx) return;
+
+      // Clear and redraw the current video frame
       ctx.save();
       ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
       ctx.drawImage(results.image, 0, 0, canvasRef.current.width, canvasRef.current.height);
-      drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, {
-        color: '#00FF00',
-        lineWidth: 4,
-      });
-      drawLandmarks(ctx, results.poseLandmarks, {
-        color: '#FF0000',
-        lineWidth: 2,
-      });
+      drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, { color: '#00FF00', lineWidth: 4 });
+      drawLandmarks(ctx, results.poseLandmarks, { color: '#FF0000', lineWidth: 2 });
       ctx.restore();
 
-      // If no start/end pose is saved, skip rep logic
-      if (!startPoseAnglesRef.current || !endPoseAnglesRef.current) return;
-      // If we haven't computed min/max, skip as well
-      if (!minAngles || !maxAngles) return;
-
-      // Live angles
+      // -- EXERCISE/REPS LOGIC --
       const liveAngles = computePoseAngles(results.poseLandmarks);
 
-      // Are we near the minAngles => "AT_START"
-      const isAtStart = isNearPose(liveAngles, minAngles, 10);
-      // Are we near the maxAngles => "AT_END"
-      const isAtEnd = isNearPose(liveAngles, maxAngles, 10);
+      const startAngles = startPoseAnglesRef.current;
+      const endAngles = endPoseAnglesRef.current;
 
-      let newState: "AT_START" | "AT_END" | "IN_BETWEEN" = "IN_BETWEEN";
-      if (isAtStart) newState = "AT_START";
-      else if (isAtEnd) newState = "AT_END";
+      let matchesStart = false;
+      let matchesEnd = false;
 
-      if (newState !== userPoseStateRef.current) {
-        // Example: increment reps when going from start -> end
-        if (userPoseStateRef.current === "AT_START" && newState === "AT_END") {
+      if (startAngles) {
+        matchesStart = isPoseMatch(liveAngles, startAngles, 15);
+      }
+      if (endAngles) {
+        matchesEnd = isPoseMatch(liveAngles, endAngles, 15);
+      }
+
+      let newPoseState: "AT_START" | "AT_END" | "IN_BETWEEN" = "IN_BETWEEN";
+      if (matchesStart) newPoseState = "AT_START";
+      else if (matchesEnd) newPoseState = "AT_END";
+
+      // Compare to the *ref*, so we don’t rely on re-renders:
+      if (newPoseState !== userPoseStateRef.current) {
+        // e.g. increment rep going from start to end
+        if (userPoseStateRef.current === "AT_START" && newPoseState === "AT_END") {
           setRepCount((count) => count + 1);
         }
-        setUserPoseState(newState);
+        setUserPoseState(newPoseState);
       }
     });
 
-    // Start the camera
+    // Start camera once
     const camera = new cam.Camera(videoRef.current, {
       onFrame: async () => {
         if (videoRef.current) await pose.send({ image: videoRef.current });
@@ -176,17 +163,19 @@ const NewMovement: React.FC = () => {
     });
     camera.start();
 
+    // Cleanup on unmount
     return () => {
       camera.stop();
     };
-  }, [minAngles, maxAngles]);
+  }, []); // <--- No dependencies so this only runs on mount
 
-  // Countdown helper
+  // -- Countdown helper --
   const runCountdown = (delay: number): Promise<void> => {
     return new Promise((resolve) => {
       let count = delay;
       setTimerText(`${count}`);
       setShowTimer(true);
+
       const interval = setInterval(() => {
         count--;
         if (count > 0) {
@@ -194,53 +183,32 @@ const NewMovement: React.FC = () => {
         } else if (count === 0) {
           setTimerText("Snap!");
           clearInterval(interval);
+          // Give a quick moment before resolving
           setTimeout(() => {
             resolve();
-          }, 600);
+          }, 800);
         }
       }, 1000);
     });
   };
 
-  // Save the user's Start & End poses
+  // -- Save start & end poses (two countdowns in a row) --
   const saveMovement = async (delay: number) => {
     setSavePoseButtonDisabled(true);
 
-    // 1) Countdown -> capture Start
+    // 1) Countdown for start pose
     await runCountdown(delay);
-
-    // Retrieve the latest pose from the ref:
-    const startLandmarks = latestLandmarksRef.current || [];
-    const sAngles = computePoseAngles(startLandmarks);
+    const sAngles = computePoseAngles((canvasRef.current as any)._poseLandmarks || []);
     setStartPoseAngles(sAngles);
-    setStartPoseSaved(true);
-
+    setStartPose({ landmarks: (canvasRef.current as any)._poseLandmarks || [] });
     console.log("Saved START pose angles:", sAngles);
 
-    // 2) Countdown -> capture End
+    // 2) Countdown for end pose
     await runCountdown(delay);
-
-    const endLandmarks = latestLandmarksRef.current || [];
-    const eAngles = computePoseAngles(endLandmarks);
+    const eAngles = computePoseAngles((canvasRef.current as any)._poseLandmarks || []);
     setEndPoseAngles(eAngles);
-    setEndPoseSaved(true);
-
+    setEndPose({ landmarks: (canvasRef.current as any)._poseLandmarks || [] });
     console.log("Saved END pose angles:", eAngles);
-
-    // 3) Now compute min/max
-    const tempMin: Record<string, number> = {};
-    const tempMax: Record<string, number> = {};
-    for (const jointName of Object.keys(angleJoints)) {
-      const startAngle = sAngles[jointName] ?? 0;
-      const endAngle = eAngles[jointName] ?? 0;
-      tempMin[jointName] = Math.min(startAngle, endAngle);
-      tempMax[jointName] = Math.max(startAngle, endAngle);
-    }
-    setMinAngles(tempMin);
-    setMaxAngles(tempMax);
-
-    console.log("Set minAngles:", tempMin);
-    console.log("Set maxAngles:", tempMax);
 
     setShowTimer(false);
     setSavePoseButtonDisabled(false);
@@ -248,11 +216,11 @@ const NewMovement: React.FC = () => {
 
   return (
     <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-8 my-8">
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">New Movement</h1>
         <button
+          className="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600"
           onClick={() => alert("Results emailed to recipients successfully!")}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
         >
           Send Results
         </button>
@@ -289,11 +257,11 @@ const NewMovement: React.FC = () => {
       </div>
 
       <div className="mt-4 mb-4 text-xl text-gray-700">
-        {startPoseSaved ? "Start Pose Saved" : "No Start Pose Saved"} <br />
-        {endPoseSaved ? "End Pose Saved" : "No End Pose Saved"}
+        {startPose ? "Start Pose Saved" : "No Start Pose Saved"} <br />
+        {endPose ? "End Pose Saved" : "No End Pose Saved"}
       </div>
 
-      <div className="mt-2 mb-2 text-2xl text-gray-800 font-semibold">
+      <div className="mt-4 mb-2 text-2xl text-gray-800 font-semibold">
         Reps: {repCount}
       </div>
       <div className="text-lg text-gray-600">

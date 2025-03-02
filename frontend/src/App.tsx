@@ -4,6 +4,7 @@ import ExerciseTracker from './ExerciseTracker';
 import YogaPoseMatcher from './exercises/YogaPoseMatcher';
 import Leaderboard from './Leaderboard';
 import PhysicalTherapy from './PhysicalTherapy';
+import NewMovement from './NewMovement';
 
 
 const App: React.FC = () => {
@@ -44,6 +45,14 @@ const App: React.FC = () => {
                 Leaderboard
               </Link>
             </li>
+            <li>
+              <Link
+                to="/new-movement"
+                className="text-xl font-bold text-gray-800 hover:text-indigo-600 transition-colors"
+              >
+                New Movement
+              </Link>
+            </li>
           </ul>
         </nav>
         <main className="flex-1 flex flex-col items-center px-4 py-8">
@@ -53,6 +62,7 @@ const App: React.FC = () => {
               <Route path="/yoga-pose" element={<YogaPoseMatcher />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/physical-therapy" element={<PhysicalTherapy />} />
+              <Route path="/new-movement" element={<NewMovement />} />
             </Routes>
           </div>
         </main>
