@@ -75,7 +75,6 @@ const NewMovement: React.FC = () => {
 
   // ========== Live Landmarks & Angles ==========
   const currentLandmarksRef = useRef<any[] | null>(null);
-  const [currentAngles, setCurrentAngles] = useState<Record<string, number>>({});
 
   // ========== Rep / Phase Logic ==========
   const [repCount, setRepCount] = useState<number>(0);
@@ -162,7 +161,6 @@ const NewMovement: React.FC = () => {
           liveAngles[joint] = calculateAngle(A, B, C);
         }
       });
-      setCurrentAngles(liveAngles);
 
       // If we don't have both poses, we can't do rep logic
       if (!startPoseRef.current || !endPoseRef.current) return;

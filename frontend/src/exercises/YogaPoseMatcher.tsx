@@ -1,11 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { flushSync } from 'react-dom';
 import Select from 'react-select';
 import { Pose, POSE_CONNECTIONS, Results } from '@mediapipe/pose';
 import * as cam from '@mediapipe/camera_utils';
 import { drawConnectors, drawLandmarks } from '@mediapipe/drawing_utils';
 // Import your BlazePose model JSON data
-import modelData from '../data/BlazePoseModel.json';
 
 // Helper: calculate an angle (with vertex at B)
 const calculateAngle = (A: any, B: any, C: any): number => {
@@ -116,6 +114,7 @@ const YogaPoseMatcher: React.FC = () => {
   }, [savedPose]);
 
   // Live pose state.
+  // @ts-ignore
   const [currentAngles, setCurrentAngles] = useState<{ [key: string]: number }>({});
   const [currentLandmarks, setCurrentLandmarks] = useState<any[] | null>(null);
   const currentLandmarksRef = useRef<any[] | null>(null);
@@ -124,7 +123,6 @@ const YogaPoseMatcher: React.FC = () => {
   }, [currentLandmarks]);
 
   // Feedback and score state.
-  const [feedback, setFeedback] = useState<string[]>([]);
   const [matchScore, setMatchScore] = useState<number>(100);
   // Smoothed error state.
   const [smoothedError, setSmoothedError] = useState<number>(0);
@@ -192,7 +190,6 @@ const YogaPoseMatcher: React.FC = () => {
       if (savedPoseRef.current) {
         let totalError = 0;
         let totalWeight = 0;
-        const newFeedback: string[] = [];
 
         Object.entries(angleJoints).forEach(([joint, indices]) => {
           if (liveAngles[joint] !== undefined) {
@@ -208,9 +205,6 @@ const YogaPoseMatcher: React.FC = () => {
             totalWeight += weight;
 
             if (Math.abs(diff) > angleThreshold) {
-              const jointData = (modelData as any)[joint];
-              const name = jointData ? jointData.displayName : joint;
-              newFeedback.push(diff < 0 ? `Increase angle for ${name}` : `Decrease angle for ${name}`);
             }
           }
         });
@@ -222,7 +216,6 @@ const YogaPoseMatcher: React.FC = () => {
         // Adjust multiplier as needed; here, multiplier = 5.
         const score = Math.max(0, 100 - newSmoothedError * 5);
         currentScoreRef.current = Math.round(score);
-        setFeedback(newFeedback);
 
         ctx.save();
         ctx.fillStyle = "white";
@@ -287,6 +280,7 @@ const YogaPoseMatcher: React.FC = () => {
       let newPostLabel = window.prompt("Enter a name for the new pose");
       if (newPostLabel) {
         setSavedPose({ landmarks: item });
+        // @ts-ignore
         setPoseOptions((prev) => [...prev, { value: item, label: newPostLabel }]);
         // add the new pose to local storage for persistence
         localStorage.setItem("allYogaPose", JSON.stringify([...poseOptions, { value: item, label: newPostLabel }]));
@@ -399,6 +393,7 @@ const YogaPoseMatcher: React.FC = () => {
           isSearchable={true}
           classNamePrefix="select"
           className="bg-green-600 hover:bg-green-700 py-2 px-4 rounded"
+          // @ts-ignore
           options={poseOptions}
           value={poseOptionSelected}
           onChange={(selected) => setPoseReference(selected)}

@@ -78,7 +78,7 @@ const ExerciseTracker: React.FC = () => {
       setShowCelebration(true);
       const timer = setTimeout(() => {
         setShowCelebration(false);
-      }, 3000);
+      }, 1000);
       return () => clearTimeout(timer);
     }
   }, [repCount]);
