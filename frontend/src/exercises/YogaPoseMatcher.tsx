@@ -383,6 +383,7 @@ const YogaPoseMatcher: React.FC = () => {
           classNamePrefix="select"
           className="bg-green-600 hover:bg-green-700 py-2 px-4 rounded"
           options={poseOptions}
+          isDisabled={!poseOptionSelected}
           value={poseOptionSelected}
           onChange={(selected) => setPoseReference(selected)}
           placeholder="Select a pose as reference"
