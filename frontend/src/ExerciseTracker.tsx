@@ -8,18 +8,15 @@ const ExerciseTracker: React.FC = () => {
   const [repCount, setRepCount] = useState<number>(0);
 
   const handleRepCountChange = (newCount: number) => {
+    console.log(repCount)
     setRepCount(newCount);
   };
 
   return (
     <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-8 my-8">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">AI Physical Therapy Coach</h1>
-
       <div className="mb-4">
-        <label
-          htmlFor="exerciseSelect"
-          className="text-lg font-medium text-gray-700 mr-2"
-        >
+        <label htmlFor="exerciseSelect" className="text-lg font-medium text-gray-700 mr-2">
           Choose an exercise:
         </label>
         <select
@@ -36,7 +33,11 @@ const ExerciseTracker: React.FC = () => {
           <option value="lunge">Lunge</option>
         </select>
       </div>
-      <div className="border border-gray-300 rounded-lg overflow-hidden">
+      
+      {/* Display the rep count */}
+      <div className="mb-4 text-2xl font-semibold text-blue-700">
+      </div>
+      
         {selectedExercise === "squat" && (
           <SquatTracker onRepCountChange={handleRepCountChange} />
         )}
@@ -46,7 +47,6 @@ const ExerciseTracker: React.FC = () => {
         {selectedExercise === "lunge" && (
           <LungeTracker onRepCountChange={handleRepCountChange} />
         )}
-      </div>
     </div>
   );
 };

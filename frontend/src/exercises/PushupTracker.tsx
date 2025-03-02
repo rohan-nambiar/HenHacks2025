@@ -133,7 +133,7 @@ const PushupTracker: React.FC<PushupTrackerProps> = ({ onRepCountChange }) => {
   const instruction = phase === "up" ? "Go Lower" : "Go Higher";
 
   return (
-    <div style={{ textAlign: 'center', paddingLeft: '35px' }}>
+    <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-8 my-8">
       <div className="text-2xl font-semibold text-blue-700 mb-6">Push-up Count: {repCountRef.current}</div>
       <div className="text-2xl font-semibold text-red-700 mb-6">Advice: {instruction}</div>
       <video ref={videoRef} style={{ display: 'none' }} />
