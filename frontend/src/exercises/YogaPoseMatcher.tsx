@@ -14,7 +14,6 @@ const calculateAngle = (A: any, B: any, C: any): number => {
 };
 
 // Define the joints and their respective landmark indexes.
-// The middle point of the three landmarks is used to compute the angle.
 const angleJoints: { [key: string]: [number, number, number] } = {
   rightElbow: [16, 14, 12],      // right wrist, right elbow, right shoulder
   rightShoulder: [14, 12, 24],   // right elbow, right shoulder, right hip
@@ -30,12 +29,14 @@ const YogaPoseMatcher: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Store the reference pose angles after the user "saves" a pose.
+  // State to store the reference pose angles and landmarks
   const [referenceAngles, setReferenceAngles] = useState<{ [key: string]: number } | null>(null);
-  // Store the live match score (0-100%).
+  const [referenceLandmarks, setReferenceLandmarks] = useState<any[] | null>(null);
+
+  // Live match score and current pose info
   const [matchScore, setMatchScore] = useState<number>(0);
-  // For debugging or display, store the live calculated angles.
   const [currentAngles, setCurrentAngles] = useState<{ [key: string]: number }>({});
+  const [currentLandmarks, setCurrentLandmarks] = useState<any[] | null>(null);
 
   useEffect(() => {
     if (!videoRef.current) return;
@@ -56,19 +57,24 @@ const YogaPoseMatcher: React.FC = () => {
       if (!canvasCtx) return;
       
       canvasCtx.save();
-      // Clear canvas and draw the current frame.
+      // Clear the canvas and draw the current frame.
       canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
       canvasCtx.drawImage(results.image, 0, 0, canvasRef.current.width, canvasRef.current.height);
       
-      // Draw landmarks and connectors for visual feedback.
+      // Draw the live pose in default colors.
       if (results.poseLandmarks) {
         drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, { color: '#00FF00', lineWidth: 4 });
         drawLandmarks(canvasCtx, results.poseLandmarks, { color: '#FF0000', lineWidth: 2 });
       }
+
+      // Save the current landmarks for potential reference saving.
+      if (results.poseLandmarks) {
+        setCurrentLandmarks(results.poseLandmarks);
+      }
       
       if (results.poseLandmarks) {
         const landmarks = results.poseLandmarks;
-        // Calculate the angles for each target joint.
+        // Calculate angles for each target joint.
         const angles: { [key: string]: number } = {};
         Object.entries(angleJoints).forEach(([jointName, [iA, iB, iC]]) => {
           if (landmarks[iA] && landmarks[iB] && landmarks[iC]) {
@@ -77,14 +83,14 @@ const YogaPoseMatcher: React.FC = () => {
         });
         setCurrentAngles(angles);
 
-        // If a reference pose has been saved, compute the match score.
+        // If a reference pose exists, compare angles to compute a match score.
         if (referenceAngles) {
           let totalScore = 0;
           let count = 0;
           Object.keys(angleJoints).forEach((jointName) => {
             if (angles[jointName] !== undefined && referenceAngles[jointName] !== undefined) {
               const diff = Math.abs(angles[jointName] - referenceAngles[jointName]);
-              // Use a tolerance of 30° for full score (0° difference = 100%, >=30° = 0%).
+              // Linear interpolation: 0° difference gives 100%, 30° difference gives 0%.
               const jointScore = Math.max(0, (1 - diff / 30)) * 100;
               totalScore += jointScore;
               count++;
@@ -101,6 +107,16 @@ const YogaPoseMatcher: React.FC = () => {
           canvasCtx.fillText(`No reference pose saved`, 10, 30);
         }
       }
+
+      // Overlay the saved reference pose (if it exists) using a different style.
+      if (referenceLandmarks) {
+        drawConnectors(canvasCtx, referenceLandmarks, POSE_CONNECTIONS, { color: '#0000FF', lineWidth: 2 });
+        drawLandmarks(canvasCtx, referenceLandmarks, { color: '#0000FF', lineWidth: 1 });
+        canvasCtx.fillStyle = "#0000FF";
+        canvasCtx.font = "20px Arial";
+        canvasCtx.fillText("Reference Pose", 10, 60);
+      }
+      
       canvasCtx.restore();
     });
     
@@ -115,11 +131,12 @@ const YogaPoseMatcher: React.FC = () => {
     return () => {
       camera.stop();
     };
-  }, [referenceAngles]);
+  }, [referenceAngles, referenceLandmarks]);
 
-  // Handler to save the current live pose as the reference.
+  // When saving the pose, capture both the current angles and the full landmarks.
   const savePose = () => {
-    if (Object.keys(currentAngles).length > 0) {
+    if (currentLandmarks) {
+      setReferenceLandmarks([...currentLandmarks]); // Clone the array.
       setReferenceAngles({ ...currentAngles });
     }
   };
@@ -131,7 +148,7 @@ const YogaPoseMatcher: React.FC = () => {
         <button onClick={savePose}>Save Current Pose as Reference</button>
       </div>
       <div style={{ marginBottom: '10px', fontSize: '20px' }}>
-        {referenceAngles ? "Reference Pose Saved" : "No Reference Pose Saved"}
+        {referenceLandmarks ? "Reference Pose Saved" : "No Reference Pose Saved"}
       </div>
       <div style={{ marginBottom: '10px', fontSize: '20px' }}>
         Current Match Score: {matchScore}%
