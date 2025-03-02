@@ -15,6 +15,7 @@
     "@mediapipe/pose": "^0.5.1675469404",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-router-dom": "^7.2.0",
     "react-webcam": "^7.2.0"
   },
   "devDependencies": {
