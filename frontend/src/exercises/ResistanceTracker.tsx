@@ -130,7 +130,7 @@ const PushupTracker: React.FC<PushupTrackerProps> = ({ onRepCountChange }) => {
 
   return (
     <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-8 my-8">
-      <div className="text-2xl font-semibold text-blue-700 mb-6">Push-up Count: {repCountRef.current}</div>
+      <div className="text-2xl font-semibold text-blue-700 mb-6">Resistance Training Count: {repCountRef.current}</div>
       <div className="text-2xl font-semibold text-red-700 mb-6">Advice: {instruction}</div>
       <video ref={videoRef} style={{ display: 'none' }} />
       <canvas ref={canvasRef} width={640} height={480} className="w-full" />
