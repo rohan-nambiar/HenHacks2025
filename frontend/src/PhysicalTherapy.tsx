@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import SquatTracker from './exercises/SquatTracker';
-import PushupTracker from './exercises/PushupTracker';
-import LungeTracker from './exercises/LungeTracker';
+import BalanceTracker from './exercises/BalanceTracker';
+import ResistanceTracker from './exercises/ResistanceTracker';
 import Confetti from 'react-confetti';
 
-const ExerciseTracker: React.FC = () => {
-  const [selectedExercise, setSelectedExercise] = useState<"squat" | "pushup" | "lunge">("squat");
+const PhysicalTherapy: React.FC = () => {
+  const [selectedExercise, setSelectedExercise] = useState<'balance' | 'stretch' | 'resistance'>('balance');
+  const [isBalanced, setIsBalanced] = useState<boolean>(true);
   const [repCount, setRepCount] = useState<number>(0);
   const [showCelebration, setShowCelebration] = useState<boolean>(false);
 
@@ -13,9 +13,12 @@ const ExerciseTracker: React.FC = () => {
     setRepCount(newCount);
   };
 
+  const onBalanceChange = (isBalanced: boolean) => {
+    setIsBalanced(isBalanced);
+  };
+
   useEffect(() => {
-    // When repCount is a multiple of 10 (and non-zero), trigger celebration
-    if (repCount > 0 && repCount % 3 === 0) {
+    if (repCount > 0 && repCount % 5 === 0) {
       setShowCelebration(true);
       const timer = setTimeout(() => {
         setShowCelebration(false);
@@ -28,18 +31,16 @@ const ExerciseTracker: React.FC = () => {
     <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-8 my-8 relative">
       {showCelebration && (
         <>
-          {/* Confetti overlay */}
           <Confetti width={window.innerWidth} height={window.innerHeight} />
-          {/* Popup badge */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="bg-blue-600 text-white text-2xl font-bold py-4 px-6 rounded shadow-lg">
+            <div className="bg-green-600 text-white text-2xl font-bold py-4 px-6 rounded shadow-lg">
               You reached {repCount} reps!
             </div>
           </div>
         </>
       )}
       
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">AI Workout Coach</h1>
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">Physical Therapy Tracker</h1>
       
       <div className="mb-4">
         <label
@@ -52,34 +53,30 @@ const ExerciseTracker: React.FC = () => {
           id="exerciseSelect"
           value={selectedExercise}
           onChange={(e) => {
-            setSelectedExercise(e.target.value as "squat" | "pushup" | "lunge");
+            setSelectedExercise(e.target.value as 'balance' | 'stretch' | 'resistance');
             setRepCount(0);
           }}
-          className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-300"
+          className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-green-300"
         >
-          <option value="squat">Squat</option>
-          <option value="pushup">Push-up</option>
-          <option value="lunge">Lunge</option>
+          <option value="balance">Balance</option>
+          <option value="resistance">Resistance Training</option>
         </select>
       </div>
       
-      <div className="mb-4 text-2xl font-semibold text-blue-700">
+      <div className="mb-4 text-2xl font-semibold text-green-700">
         Total Reps: {repCount}
       </div>
       
       <div className="border border-gray-300 rounded-lg overflow-hidden">
-        {selectedExercise === "squat" && (
-          <SquatTracker onRepCountChange={handleRepCountChange} />
+        {selectedExercise === "balance" && (
+          <BalanceTracker onBalanceChange={onBalanceChange} />
         )}
-        {selectedExercise === "pushup" && (
-          <PushupTracker onRepCountChange={handleRepCountChange} />
-        )}
-        {selectedExercise === "lunge" && (
-          <LungeTracker onRepCountChange={handleRepCountChange} />
+        {selectedExercise === "resistance" && (
+          <ResistanceTracker onRepCountChange={handleRepCountChange} />
         )}
       </div>
     </div>
   );
 };
 
-export default ExerciseTracker;
+export default PhysicalTherapy;
