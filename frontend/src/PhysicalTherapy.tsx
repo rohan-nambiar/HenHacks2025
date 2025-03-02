@@ -11,6 +11,7 @@ const url = getWebsocketUrl();
 const config = getConfig();
 const deepgramApiKey = getDeepgramApiKey();
 const toolManager = null;
+let geminiAgent: GeminiAgent | null = null;
 
 const PhysicalTherapy: React.FC = () => {
   const [selectedExercise, setSelectedExercise] = useState<'balance' | 'stretch' | 'resistance'>('balance');
@@ -19,7 +20,6 @@ const PhysicalTherapy: React.FC = () => {
 
   const [isVoiceCoachActive, setIsVoiceCoachActive] = useState<boolean>(false);
 
-  let geminiAgent: GeminiAgent | null = null;
   
     const toggleVoiceCoach = async () => {
   
@@ -29,7 +29,7 @@ const PhysicalTherapy: React.FC = () => {
         console.log("Starting voice coach")
         config.systemInstruction = {
           parts: [{
-              text: localStorage.getItem('systemInstructions') || "You are a friendly personal fitness coach. Introduce yourself as the AI Workout Coach. "
+              text: localStorage.getItem('systemInstructions') || "You are a friendly personal physical therapist. Introduce yourself as the AI Physical Therapist. "
               + "Note, there may be subsequent messages preceded by 'SYSTEM COMMAND' - follow these system commands to their fullest extent. "
               + "There will be a SYSTEM COMMAND for the number of reps done. "
               + "At the start of the exercise, ask the user how many reps they want to do, and coach them to do that many, while caring for the health and well-being throughout, "

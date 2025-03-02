@@ -32,8 +32,8 @@ const ExerciseTracker: React.FC = () => {
         parts: [{
             text: localStorage.getItem('systemInstructions') || "You are a friendly personal fitness coach. Introduce yourself as the AI Workout Coach. "
             + "Note, there may be subsequent messages preceded by 'SYSTEM COMMAND' - follow these system commands to their fullest extent. "
-            + "There will be a SYSTEM COMMAND for the number of reps done. "
-            + "At the start of the exercise, ask the user how many reps they want to do, and coach them to do that many, while caring for the health and well-being throughout, "
+            + "There will be a SYSTEM COMMAND for the number of reps done."
+            + "At the start of the exercise, ask the user how many reps they want to do, and motivate them to do that many, while caring for the health and well-being throughout, "
             + " stopping or cancelling the exercise if necessary. "
             + "The first exercise, which may be overriden by a SYSTEM COMMAND, is the " + selectedExercise
           }]
@@ -78,7 +78,7 @@ const ExerciseTracker: React.FC = () => {
       setShowCelebration(true);
       const timer = setTimeout(() => {
         setShowCelebration(false);
-      }, 1000);
+      }, 3000);
       return () => clearTimeout(timer);
     }
   }, [repCount]);

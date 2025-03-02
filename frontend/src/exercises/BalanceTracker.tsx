@@ -128,7 +128,7 @@ const BalanceTracker: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  console.log(feedback + "" + currentAngles);
+  // console.log(feedback + "" + currentAngles);
 
   // Initialize MediaPipe Pose and camera (run once on mount).
   useEffect(() => {
