@@ -38,9 +38,13 @@ const ExerciseTracker: React.FC = () => {
           </div>
         </>
       )}
-      
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">AI Workout Coach</h1>
-      
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">AI Workout Coach</h1>
+        <button className="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300" onClick={() => alert("Results sent!")}>
+          Send Results
+        </button>
+      </div>
+
       <div className="mb-4">
         <label
           htmlFor="exerciseSelect"
@@ -62,11 +66,11 @@ const ExerciseTracker: React.FC = () => {
           <option value="lunge">Lunge</option>
         </select>
       </div>
-      
+
       <div className="mb-4 text-2xl font-semibold text-blue-700">
         Total Reps: {repCount}
       </div>
-      
+
       <div className="border border-gray-300 rounded-lg overflow-hidden">
         {selectedExercise === "squat" && (
           <SquatTracker onRepCountChange={handleRepCountChange} />

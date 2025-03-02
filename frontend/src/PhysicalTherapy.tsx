@@ -40,7 +40,12 @@ const PhysicalTherapy: React.FC = () => {
         </>
       )}
       
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Physical Therapy Tracker</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">Physical Therapy Tracker</h1>
+        <button className="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300" onClick={() => alert("Results sent!")}>
+          Send Results
+        </button>
+      </div>
       
       <div className="mb-4">
         <label
