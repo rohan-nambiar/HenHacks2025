@@ -93,8 +93,11 @@ const YogaPoseMatcher: React.FC = () => {
   const [savedPose, setSavedPose] = useState<{ landmarks: any[] } | null>(null);
   const savedPoseRef = useRef<{ landmarks: any[] } | null>(null);
   const [savePoseButtonDisabled, setSavePostButtonDisabled] = useState<boolean>(false);
-  const [timerStyle, setTimerStyle] = useState<any>({ display: "none" });
+  
+  // Timer state for countdown text.
   const [timerText, setTimerText] = useState<string>("");
+  const [showTimer, setShowTimer] = useState<boolean>(false);
+  
   useEffect(() => {
     savedPoseRef.current = savedPose;
   }, [savedPose]);
@@ -106,7 +109,6 @@ const YogaPoseMatcher: React.FC = () => {
   useEffect(() => {
     currentLandmarksRef.current = currentLandmarks;
   }, [currentLandmarks]);
-
 
   // Feedback and score state.
   const [feedback, setFeedback] = useState<string[]>([]);
@@ -274,28 +276,27 @@ const YogaPoseMatcher: React.FC = () => {
     }
   }
 
-  // Save the current pose as reference.
+  // Save the current pose as reference with an optional delay.
   const savePose = (delay: number) => {
     setSavePostButtonDisabled(true);
     let count = delay;
     if (delay === 0) {
       saveRef(currentLandmarksRef.current);
       setSavePostButtonDisabled(false);
-    }
-    else {
+    } else {
       setTimerText(`${count}`);
-      setTimerStyle({ display: "block" });
+      setShowTimer(true);
       const interval = setInterval(() => {
         count--;
         if (count > 0) {
           setTimerText(`${count}`);
-        } else if (count == 0) {
+        } else if (count === 0) {
           setTimerText(`Snap!`);
           saveRef(currentLandmarksRef.current);
           setSavePostButtonDisabled(false);
         } else if (count < 0) {
           clearInterval(interval);
-          setTimerStyle({ display: "none" });
+          setShowTimer(false);
         }
       }, 1000);
     }
@@ -333,19 +334,30 @@ const YogaPoseMatcher: React.FC = () => {
         </button>
 
       </div>
-
-
-
-      <div style={timerStyle}>{timerText}</div>
-      <div className="mb-4 text-xl text-gray-700">
+      {/* Overlay the countdown on top of the canvas */}
+      <div className="border border-gray-300 rounded-lg overflow-hidden relative">
+        <video ref={videoRef} className="hidden" />
+        <canvas ref={canvasRef} width={640} height={480} className="w-full" />
+        {showTimer && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <span className="countdown font-mono text-6xl">
+              <span 
+                style={{ "--value": timerText } as React.CSSProperties}
+                aria-live="polite" 
+                aria-label={`Countdown: ${timerText}`}
+                className="bg-white/75 px-4 py-2 rounded shadow"
+              >
+                {timerText}
+              </span>
+            </span>
+          </div>
+        )}
+      </div>
+      <div className="mt-4 mb-4 text-xl text-gray-700">
         {savedPose ? "Reference Pose Saved" : "No Reference Pose Saved"}
       </div>
       <div className="mb-4 text-xl text-gray-700">
         Current Match Score: {matchScore}%
-      </div>
-      <div className="border border-gray-300 rounded-lg overflow-hidden">
-        <video ref={videoRef} className="hidden" />
-        <canvas ref={canvasRef} width={640} height={480} className="w-full" />
       </div>
     </div>
   );
