@@ -92,6 +92,9 @@ const YogaPoseMatcher: React.FC = () => {
   // Saved reference pose (state and ref).
   const [savedPose, setSavedPose] = useState<{ landmarks: any[] } | null>(null);
   const savedPoseRef = useRef<{ landmarks: any[] } | null>(null);
+  const [savePoseButtonDisabled, setSavePostButtonDisabled] = useState<boolean>(false);
+  const [timerStyle, setTimerStyle] = useState<any>({ display: "none" });
+  const [timerText, setTimerText] = useState<string>("");
   useEffect(() => {
     savedPoseRef.current = savedPose;
   }, [savedPose]);
@@ -262,13 +265,39 @@ const YogaPoseMatcher: React.FC = () => {
     };
   }, []); // Run once on mount
 
-  // Save the current pose as reference.
-  const savePose = () => {
-    if (currentLandmarksRef.current && currentLandmarksRef.current.length > 0) {
+  const saveRef = (item: any) => {
+    if (item && item.length > 0) {
       console.log("Saving current pose as reference.");
-      setSavedPose({ landmarks: [...currentLandmarksRef.current] });
+      setSavedPose({ landmarks: item });
     } else {
       console.warn("No valid landmarks to save.");
+    }
+  }
+
+  // Save the current pose as reference.
+  const savePose = (delay: number) => {
+    setSavePostButtonDisabled(true);
+    let count = delay;
+    if (delay === 0) {
+      saveRef(currentLandmarksRef.current);
+      setSavePostButtonDisabled(false);
+    }
+    else {
+      setTimerText(`${count}`);
+      setTimerStyle({ display: "block" });
+      const interval = setInterval(() => {
+        count--;
+        if (count > 0) {
+          setTimerText(`${count}`);
+        } else if (count == 0) {
+          setTimerText(`Snap!`);
+          saveRef(currentLandmarksRef.current);
+          setSavePostButtonDisabled(false);
+        } else if (count < 0) {
+          clearInterval(interval);
+          setTimerStyle({ display: "none" });
+        }
+      }, 1000);
     }
   };
 
@@ -282,13 +311,22 @@ const YogaPoseMatcher: React.FC = () => {
       </div>
       <div className="mb-4">
         <button 
-          onClick={savePose} 
+          onClick={savePose.bind(null, 0)} 
           className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded"
-          disabled={!currentLandmarksRef.current || currentLandmarksRef.current.length === 0}
-        >
-          Save Current Pose as Reference
-        </button>
+          disabled={!currentLandmarksRef.current || currentLandmarksRef.current.length === 0 || savePoseButtonDisabled}
+        >Take Reference Pose</button>
+        <button 
+          onClick={savePose.bind(null, 3)} 
+          className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded"
+          disabled={!currentLandmarksRef.current || currentLandmarksRef.current.length === 0 || savePoseButtonDisabled}
+        >3 Seconds</button>
+        <button 
+          onClick={savePose.bind(null, 10)} 
+          className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded"
+          disabled={!currentLandmarksRef.current || currentLandmarksRef.current.length === 0 || savePoseButtonDisabled}
+        >10 Seconds</button>
       </div>
+      <div style={timerStyle}>{timerText}</div>
       <div className="mb-4 text-xl text-gray-700">
         {savedPose ? "Reference Pose Saved" : "No Reference Pose Saved"}
       </div>
