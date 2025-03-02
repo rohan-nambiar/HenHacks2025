@@ -14,7 +14,7 @@ const ExerciseTracker: React.FC = () => {
   return (
     <div style={{ textAlign: 'center' }}>
       <h1>AI Physical Therapy Coach</h1>
-      <div style={{ marginBottom: '10px' }}>
+      <h2 style={{ marginBottom: '10px' }}>
         <label htmlFor="exerciseSelect">Choose an exercise: </label>
         <select
           id="exerciseSelect"
@@ -28,10 +28,7 @@ const ExerciseTracker: React.FC = () => {
           <option value="pushup">Push-up</option>
           <option value="lunge">Lunge</option>
         </select>
-      </div>
-      <div style={{ fontSize: "35px", marginBottom: "10px" }}>
-        {selectedExercise} Count: {repCount}
-      </div>
+      </h2>
       {selectedExercise === "squat" && (
         <SquatTracker onRepCountChange={handleRepCountChange} />
       )}

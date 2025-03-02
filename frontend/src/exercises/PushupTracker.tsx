@@ -115,7 +115,6 @@ const PushupTracker: React.FC<PushupTrackerProps> = ({ onRepCountChange }) => {
       }
       canvasCtx.fillStyle = "white";
       canvasCtx.font = "20px Arial";
-      canvasCtx.fillText(`Push-up Count: ${repCountRef.current}`, 10, 30);
       canvasCtx.restore();
     });
     const camera = new cam.Camera(videoRef.current, {
@@ -131,11 +130,12 @@ const PushupTracker: React.FC<PushupTrackerProps> = ({ onRepCountChange }) => {
     };
   }, []); // Empty dependency array
 
-  const instruction = phase === "up" ? "go lower" : "go higher";
+  const instruction = phase === "up" ? "Go Lower" : "Go Higher";
 
   return (
     <div style={{ textAlign: 'center' }}>
-      <h1>Push-up Tracker - {instruction}</h1>
+      <h2>Push-up Count: {repCountRef.current}</h2>
+      <h2>Advice: {instruction}</h2>
       <video ref={videoRef} style={{ display: 'none' }} />
       <canvas ref={canvasRef} width={640} height={480} style={{ border: '1px solid #ccc' }} />
     </div>
