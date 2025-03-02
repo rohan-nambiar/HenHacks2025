@@ -3,26 +3,42 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import ExerciseTracker from './ExerciseTracker';
 import YogaPoseMatcher from './exercises/YogaPoseMatcher';
 
+
 const App: React.FC = () => {
   return (
     <Router>
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', width: '100%', fontFamily: 'Arial, sans-serif', paddingLeft: '60%', paddingRight: '40%' }}>
-        <div style={{ textAlign: 'center' }}>
-          <nav>
-        <ul style={{ listStyle: 'none', display: 'flex', justifyContent: 'center', gap: '20px' }}>
-          <li>
-            <Link to="/">Exercise Tracker</Link>
-          </li>
-          <li>
-            <Link to="/yoga-pose">Yoga Pose Matcher</Link>
-          </li>
-        </ul>
-          </nav>
-          <Routes>
-        <Route path="/" element={<ExerciseTracker />} />
-        <Route path="/yoga-pose" element={<YogaPoseMatcher />} />
-          </Routes>
-        </div>
+      <div className="min-h-screen bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 flex flex-col">
+        <nav className="w-full bg-white shadow-lg">
+          <ul className="max-w-5xl mx-auto flex justify-center gap-10 py-5">
+            <li>
+              <Link
+                to="/"
+                className="text-xl font-bold text-gray-800 hover:text-indigo-600 transition-colors"
+              >
+                Exercise Tracker
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/yoga-pose"
+                className="text-xl font-bold text-gray-800 hover:text-indigo-600 transition-colors"
+              >
+                Yoga Pose Matcher
+              </Link>
+            </li>
+          </ul>
+        </nav>
+        <main className="flex-1 flex flex-col items-center px-4 py-8">
+          <div className="w-full max-w-5xl bg-white rounded-xl shadow-xl p-8">
+            <Routes>
+              <Route path="/" element={<ExerciseTracker />} />
+              <Route path="/yoga-pose" element={<YogaPoseMatcher />} />
+            </Routes>
+          </div>
+        </main>
+        <footer className="w-full bg-white py-4 shadow-inner text-center text-gray-600">
+          <p>&copy; {new Date().getFullYear()} AI Fitness Tracker. All rights reserved.</p>
+        </footer>
       </div>
     </Router>
   );

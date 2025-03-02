@@ -12,10 +12,16 @@ const ExerciseTracker: React.FC = () => {
   };
 
   return (
-    <div style={{ textAlign: 'center' }}>
-      <h1>AI Physical Therapy Coach</h1>
-      <h2 style={{ marginBottom: '10px' }}>
-        <label htmlFor="exerciseSelect">Choose an exercise: </label>
+    <div className="mx-auto w-full max-w-3xl bg-white rounded-xl shadow-md p-8 mt-8 text-center">
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">AI Physical Therapy Coach</h1>
+
+      <div className="mb-4">
+        <label
+          htmlFor="exerciseSelect"
+          className="text-lg font-medium text-gray-700 mr-2"
+        >
+          Choose an exercise:
+        </label>
         <select
           id="exerciseSelect"
           value={selectedExercise}
@@ -23,12 +29,18 @@ const ExerciseTracker: React.FC = () => {
             setSelectedExercise(e.target.value as "squat" | "pushup" | "lunge");
             setRepCount(0);
           }}
+          className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-300"
         >
           <option value="squat">Squat</option>
           <option value="pushup">Push-up</option>
           <option value="lunge">Lunge</option>
         </select>
-      </h2>
+      </div>
+
+      <div className="text-2xl font-semibold text-blue-700 mb-6">
+        {selectedExercise} Count: {repCount}
+      </div>
+
       {selectedExercise === "squat" && (
         <SquatTracker onRepCountChange={handleRepCountChange} />
       )}
