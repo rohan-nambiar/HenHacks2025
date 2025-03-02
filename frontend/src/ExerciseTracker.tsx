@@ -1,22 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SquatTracker from './exercises/SquatTracker';
 import PushupTracker from './exercises/PushupTracker';
 import LungeTracker from './exercises/LungeTracker';
+import Confetti from 'react-confetti';
 
 const ExerciseTracker: React.FC = () => {
   const [selectedExercise, setSelectedExercise] = useState<"squat" | "pushup" | "lunge">("squat");
   const [repCount, setRepCount] = useState<number>(0);
+  const [showCelebration, setShowCelebration] = useState<boolean>(false);
 
   const handleRepCountChange = (newCount: number) => {
-    console.log(repCount)
     setRepCount(newCount);
   };
 
+  useEffect(() => {
+    // When repCount is a multiple of 10 (and non-zero), trigger celebration
+    if (repCount > 0 && repCount % 3 === 0) {
+      setShowCelebration(true);
+      const timer = setTimeout(() => {
+        setShowCelebration(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [repCount]);
+
   return (
-    <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-8 my-8">
+    <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-8 my-8 relative">
+      {showCelebration && (
+        <>
+          {/* Confetti overlay */}
+          <Confetti width={window.innerWidth} height={window.innerHeight} />
+          {/* Popup badge */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="bg-blue-600 text-white text-2xl font-bold py-4 px-6 rounded shadow-lg">
+              You reached {repCount} reps!
+            </div>
+          </div>
+        </>
+      )}
+      
       <h1 className="text-3xl font-bold text-gray-800 mb-6">AI Physical Therapy Coach</h1>
+      
       <div className="mb-4">
-        <label htmlFor="exerciseSelect" className="text-lg font-medium text-gray-700 mr-2">
+        <label
+          htmlFor="exerciseSelect"
+          className="text-lg font-medium text-gray-700 mr-2"
+        >
           Choose an exercise:
         </label>
         <select
@@ -34,10 +63,11 @@ const ExerciseTracker: React.FC = () => {
         </select>
       </div>
       
-      {/* Display the rep count */}
       <div className="mb-4 text-2xl font-semibold text-blue-700">
+        Total Reps: {repCount}
       </div>
       
+      <div className="border border-gray-300 rounded-lg overflow-hidden">
         {selectedExercise === "squat" && (
           <SquatTracker onRepCountChange={handleRepCountChange} />
         )}
@@ -47,6 +77,7 @@ const ExerciseTracker: React.FC = () => {
         {selectedExercise === "lunge" && (
           <LungeTracker onRepCountChange={handleRepCountChange} />
         )}
+      </div>
     </div>
   );
 };
