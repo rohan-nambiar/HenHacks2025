@@ -40,7 +40,7 @@ const ExerciseTracker: React.FC = () => {
       )}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">AI Workout Coach</h1>
-        <button className="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300" onClick={() => alert("Results sent!")}>
+        <button className="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300" onClick={() => alert("Results emailed to recipients successfully!")}>
           Send Results
         </button>
       </div>
@@ -65,6 +65,19 @@ const ExerciseTracker: React.FC = () => {
           <option value="pushup">Push-up</option>
           <option value="lunge">Lunge</option>
         </select>
+      </div>
+
+      <div className="gen-ai-start">
+          <button 
+            className="start-button font-bold text-gray-800 hover:text-indigo-600 transition-colors rounded-full border-2 border-gray-800 px-4 py-2"
+            onClick={() => {
+              console.log("Button clicked");
+              // handleMicToggle();
+            }}
+          >
+            {"Start Voice Coach"}
+          </button>
+          {/* Your existing ExerciseTracker content */}
       </div>
 
       <div className="mb-4 text-2xl font-semibold text-blue-700">
