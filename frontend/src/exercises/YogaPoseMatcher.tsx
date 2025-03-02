@@ -309,23 +309,33 @@ const YogaPoseMatcher: React.FC = () => {
           Send Results
         </button>
       </div>
-      <div className="mb-4">
-        <button 
-          onClick={savePose.bind(null, 0)} 
-          className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded"
+      <div className="mb-4 space-y-4">
+        <button
+          onClick={savePose.bind(null, 0)}
+          className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded"
           disabled={!currentLandmarksRef.current || currentLandmarksRef.current.length === 0 || savePoseButtonDisabled}
-        >Take Reference Pose</button>
-        <button 
-          onClick={savePose.bind(null, 3)} 
-          className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded"
+        >
+          Take Ref Pose
+        </button>
+        <button
+          onClick={savePose.bind(null, 3)}
+          className="bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded ml-2"
           disabled={!currentLandmarksRef.current || currentLandmarksRef.current.length === 0 || savePoseButtonDisabled}
-        >3 Seconds</button>
-        <button 
-          onClick={savePose.bind(null, 10)} 
-          className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded"
+        >
+          Wait 3 Secs
+        </button>
+        <button
+          onClick={savePose.bind(null, 10)}
+          className="bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded ml-2"
           disabled={!currentLandmarksRef.current || currentLandmarksRef.current.length === 0 || savePoseButtonDisabled}
-        >10 Seconds</button>
+        >
+          Wait 10 Secs
+        </button>
+
       </div>
+
+
+
       <div style={timerStyle}>{timerText}</div>
       <div className="mb-4 text-xl text-gray-700">
         {savedPose ? "Reference Pose Saved" : "No Reference Pose Saved"}
