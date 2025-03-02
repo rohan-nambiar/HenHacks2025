@@ -67,6 +67,19 @@ const ExerciseTracker: React.FC = () => {
         </select>
       </div>
 
+      <div className="gen-ai-start">
+          <button 
+            className="start-button font-bold text-gray-800 hover:text-indigo-600 transition-colors rounded-full border-2 border-gray-800 px-4 py-2"
+            onClick={() => {
+              console.log("Button clicked");
+              // handleMicToggle();
+            }}
+          >
+            {"Start Voice Coach"}
+          </button>
+          {/* Your existing ExerciseTracker content */}
+      </div>
+
       <div className="mb-4 text-2xl font-semibold text-blue-700">
         Total Reps: {repCount}
       </div>
