@@ -4,46 +4,84 @@ import { Pose, POSE_CONNECTIONS, Results } from '@mediapipe/pose';
 import * as cam from '@mediapipe/camera_utils';
 import { drawConnectors, drawLandmarks } from '@mediapipe/drawing_utils';
 
+// Define joint structures for both legs and arms.
+interface SquatLungeJoints {
+  left: { hip: number; knee: number; ankle: number };
+  right: { hip: number; knee: number; ankle: number };
+}
+
+interface PushupJoints {
+  left: { shoulder: number; elbow: number; wrist: number };
+  right: { shoulder: number; elbow: number; wrist: number };
+}
+
+// Define discriminated union types for exercise rules.
+interface SquatLungeRule {
+  type: "squat" | "lunge";
+  joints: SquatLungeJoints;
+  minAngle: number;
+  maxAngle: number;
+}
+
+interface PushupRule {
+  type: "pushup";
+  joints: PushupJoints;
+  minAngle: number;
+  maxAngle: number;
+}
+
+type ExerciseRule = SquatLungeRule | PushupRule;
+
 const ExerciseTracker: React.FC = () => {
   // References for the hidden video element and canvas.
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // State for the selected exercise and rep count.
+  // Refs for smoothing the angle values.
+  const leftAngleSmoothingRef = useRef<number | null>(null);
+  const rightAngleSmoothingRef = useRef<number | null>(null);
+  // Smoothing factor (alpha); lower values produce more smoothing.
+  const alpha = 0.65;
+
+  // State for the selected exercise, rep count, and current phase.
   const [selectedExercise, setSelectedExercise] = useState<"squat" | "pushup" | "lunge">("squat");
   const [repCount, setRepCount] = useState<number>(0);
-  // This ref tracks whether the exercise is currently in the “down” phase.
-  const inMotionRef = useRef<boolean>(false);
+  const [phase, setPhase] = useState<"up" | "down">("up");
+  // We'll still use a ref for immediate phase logic without causing re-renders.
+  const phaseRef = useRef<"up" | "down">("up");
 
-  /* 
-    Define exercise rules using MediaPipe’s official landmark indexes.
-    For example (from the documentation at:
-    https://github.com/google-ai-edge/mediapipe/blob/master/docs/solutions/pose.md):
-      - Squat: right hip (24), right knee (26), right ankle (28)
-      - Push-up: right shoulder (12), right elbow (14), right wrist (16)
-      - Lunge: similar to squat (you may choose different legs or adjust thresholds)
-    
-    Adjust minAngle and maxAngle values based on your testing for more accurate tracking.
-  */
-  const exerciseRules = {
+  // Define exercise rules using the proper landmark indexes.
+  const exerciseRules: Record<"squat" | "pushup" | "lunge", ExerciseRule> = {
     squat: {
-      joints: { hip: 24, knee: 26, ankle: 28 },
-      minAngle: 90,   // When the knee is bent enough (down phase)
-      maxAngle: 160,  // When the leg is nearly straight (up phase)
+      type: "squat",
+      joints: {
+        left: { hip: 23, knee: 25, ankle: 27 },
+        right: { hip: 24, knee: 26, ankle: 28 },
+      },
+      minAngle: 90,  // When both knees are sufficiently bent (down)
+      maxAngle: 160, // When both legs are nearly straight (up)
     },
     pushup: {
-      joints: { shoulder: 12, elbow: 14, wrist: 16 },
-      minAngle: 80,   // When elbows are bent (down phase)
-      maxAngle: 160,  // When arms are extended (up phase)
+      type: "pushup",
+      joints: {
+        left: { shoulder: 11, elbow: 13, wrist: 15 },
+        right: { shoulder: 12, elbow: 14, wrist: 16 },
+      },
+      minAngle: 80,  // When both elbows are bent (down)
+      maxAngle: 160, // When both arms are extended (up)
     },
     lunge: {
-      joints: { hip: 24, knee: 26, ankle: 28 },
-      minAngle: 90,   // Lower lunge position
-      maxAngle: 170,  // Standing position
+      type: "lunge",
+      joints: {
+        left: { hip: 23, knee: 25, ankle: 27 },
+        right: { hip: 24, knee: 26, ankle: 28 },
+      },
+      minAngle: 90,
+      maxAngle: 170,
     },
   };
 
-  // Utility function to calculate the angle at point B given three points A, B, and C.
+  // Utility function to calculate the angle (in degrees) at point B given points A, B, and C.
   const calculateAngle = (A: any, B: any, C: any): number => {
     const radians =
       Math.atan2(C.y - B.y, C.x - B.x) - Math.atan2(A.y - B.y, A.x - B.x);
@@ -54,10 +92,10 @@ const ExerciseTracker: React.FC = () => {
     return angle;
   };
 
+  // Initialize the MediaPipe Pose instance only once.
   useEffect(() => {
     if (!videoRef.current) return;
 
-    // Initialize MediaPipe Pose.
     const pose = new Pose({
       locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
     });
@@ -70,66 +108,96 @@ const ExerciseTracker: React.FC = () => {
       minTrackingConfidence: 0.5,
     });
 
-    // Process the pose detection results.
     pose.onResults((results: Results) => {
       if (!canvasRef.current || !videoRef.current) return;
       const canvasCtx = canvasRef.current.getContext('2d');
       if (!canvasCtx) return;
 
-      // Clear and draw the video frame.
+      // Always redraw the video frame and landmarks.
       canvasCtx.save();
       canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
       canvasCtx.drawImage(results.image, 0, 0, canvasRef.current.width, canvasRef.current.height);
-
-      // Draw pose connections and landmarks.
       if (results.poseLandmarks) {
         drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, { color: '#00FF00', lineWidth: 4 });
         drawLandmarks(canvasCtx, results.poseLandmarks, { color: '#FF0000', lineWidth: 2 });
       }
 
-      // If pose landmarks are available, perform exercise detection.
       if (results.poseLandmarks) {
         const landmarks = results.poseLandmarks;
-        let jointA, jointB, jointC;
         const rule = exerciseRules[selectedExercise];
+        let leftAngle: number | null = null;
+        let rightAngle: number | null = null;
 
-        if (selectedExercise === "squat" || selectedExercise === "lunge") {
-          // For squats and lunges, use hip, knee, and ankle.
-          jointA = landmarks[rule.joints.hip];
-          jointB = landmarks[rule.joints.knee];
-          jointC = landmarks[rule.joints.ankle];
-        } else if (selectedExercise === "pushup") {
-          // For push-ups, use shoulder, elbow, and wrist.
-          jointA = landmarks[rule.joints.shoulder];
-          jointB = landmarks[rule.joints.elbow];
-          jointC = landmarks[rule.joints.wrist];
+        if (rule.type === "squat" || rule.type === "lunge") {
+          leftAngle = calculateAngle(
+            landmarks[rule.joints.left.hip],
+            landmarks[rule.joints.left.knee],
+            landmarks[rule.joints.left.ankle]
+          );
+          rightAngle = calculateAngle(
+            landmarks[rule.joints.right.hip],
+            landmarks[rule.joints.right.knee],
+            landmarks[rule.joints.right.ankle]
+          );
+        } else if (rule.type === "pushup") {
+          leftAngle = calculateAngle(
+            landmarks[rule.joints.left.shoulder],
+            landmarks[rule.joints.left.elbow],
+            landmarks[rule.joints.left.wrist]
+          );
+          rightAngle = calculateAngle(
+            landmarks[rule.joints.right.shoulder],
+            landmarks[rule.joints.right.elbow],
+            landmarks[rule.joints.right.wrist]
+          );
         }
 
-        if (jointA && jointB && jointC) {
-          const angle = calculateAngle(jointA, jointB, jointC);
-          // Display the current angle on the canvas.
+        // Apply smoothing (exponential moving average)
+        if (leftAngle !== null) {
+          if (leftAngleSmoothingRef.current === null) {
+            leftAngleSmoothingRef.current = leftAngle;
+          } else {
+            leftAngleSmoothingRef.current = alpha * leftAngle + (1 - alpha) * leftAngleSmoothingRef.current;
+          }
+        }
+        if (rightAngle !== null) {
+          if (rightAngleSmoothingRef.current === null) {
+            rightAngleSmoothingRef.current = rightAngle;
+          } else {
+            rightAngleSmoothingRef.current = alpha * rightAngle + (1 - alpha) * rightAngleSmoothingRef.current;
+          }
+        }
+
+        const smoothedLeft = leftAngleSmoothingRef.current;
+        const smoothedRight = rightAngleSmoothingRef.current;
+
+        if (smoothedLeft !== null && smoothedRight !== null) {
           canvasCtx.fillStyle = "white";
           canvasCtx.font = "20px Arial";
-          canvasCtx.fillText(`Angle: ${Math.round(angle)}`, 10, 60);
+          canvasCtx.fillText(`L: ${Math.round(smoothedLeft)} R: ${Math.round(smoothedRight)}`, 10, 60);
 
-          // Detect a completed rep: a downward movement (angle < minAngle) followed by an upward movement (angle > maxAngle).
-          if (angle < rule.minAngle && !inMotionRef.current) {
-            inMotionRef.current = true;
-          } else if (angle > rule.maxAngle && inMotionRef.current) {
-            inMotionRef.current = false;
+          // Phase transitions: update the phase if conditions are met and update state to print in the title.
+          if (phaseRef.current === "up" && smoothedLeft < rule.minAngle && smoothedRight < rule.minAngle) {
+            phaseRef.current = "down";
+            setPhase("down");
+            console.log("Transition: UP → DOWN  ", smoothedLeft, smoothedRight);
+          }
+          if (phaseRef.current === "down" && smoothedLeft > rule.maxAngle && smoothedRight > rule.maxAngle) {
+            phaseRef.current = "up";
+            setPhase("up");
+            console.log("Transition: DOWN → UP, rep counted  ", smoothedLeft, smoothedRight);
             setRepCount((prev) => prev + 1);
           }
         }
       }
 
-      // Display the rep count.
+      // Draw rep count on the canvas.
       canvasCtx.fillStyle = "white";
       canvasCtx.font = "20px Arial";
       canvasCtx.fillText(`${selectedExercise} Count: ${repCount}`, 10, 30);
       canvasCtx.restore();
     });
 
-    // Set up the camera using MediaPipe's Camera utility.
     const camera = new cam.Camera(videoRef.current, {
       onFrame: async () => {
         if (videoRef.current) await pose.send({ image: videoRef.current });
@@ -139,15 +207,18 @@ const ExerciseTracker: React.FC = () => {
     });
     camera.start();
 
-    // Cleanup on component unmount.
     return () => {
       camera.stop();
     };
-  }, [selectedExercise, repCount]);
+  }, [selectedExercise]); // Recreate Pose only when the exercise type changes
+
+  // Compute the instruction based on the current phase.
+  // If the phase is "up", print "go lower". If the phase is "down", print "go higher".
+  const instruction = phase === "up" ? "go lower" : "go higher";
 
   return (
     <div style={{ textAlign: 'center' }}>
-      <h1>AI Physical Therapy Coach</h1>
+      <h1>AI Physical Therapy Coach - {instruction}</h1>
       <div style={{ marginBottom: '10px' }}>
         <label htmlFor="exerciseSelect">Choose an exercise: </label>
         <select
@@ -155,8 +226,10 @@ const ExerciseTracker: React.FC = () => {
           value={selectedExercise}
           onChange={(e) => {
             setSelectedExercise(e.target.value as "squat" | "pushup" | "lunge");
-            setRepCount(0); // Reset the rep count when switching exercises.
-            inMotionRef.current = false;
+            setRepCount(0);
+            // Reset both the ref and state to "up" when the exercise changes.
+            phaseRef.current = "up";
+            setPhase("up");
           }}
         >
           <option value="squat">Squat</option>
@@ -167,7 +240,6 @@ const ExerciseTracker: React.FC = () => {
       <div style={{ fontSize: "35px", marginBottom: "10px" }}>
         {selectedExercise} Count: {repCount}
       </div>
-      {/* The video element is hidden since it is used only as the image source for processing. */}
       <video ref={videoRef} style={{ display: 'none' }} />
       <canvas ref={canvasRef} width={640} height={480} style={{ border: '1px solid #ccc' }} />
     </div>
