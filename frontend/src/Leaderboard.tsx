@@ -14,6 +14,7 @@ const leaderboardData: UserStats[] = [
   { id: 3, name: "Charlie", yogaSessions: 22, exerciseHours: 17, avgPoseHoldTime: 50 },
   { id: 4, name: "David", yogaSessions: 16, exerciseHours: 10, avgPoseHoldTime: 38 },
   { id: 5, name: "Emma", yogaSessions: 25, exerciseHours: 20, avgPoseHoldTime: 40 },
+  { id: 6, name: "Jason", yogaSessions: 19, exerciseHours: 18, avgPoseHoldTime: 42 } // Your entry
 ];
 
 const Leaderboard: React.FC = () => {
@@ -36,7 +37,7 @@ const Leaderboard: React.FC = () => {
           {leaderboardData
             .sort((a, b) => (b.yogaSessions * 0.7 + b.avgPoseHoldTime * 0.3) - (a.yogaSessions * 0.7 + a.avgPoseHoldTime * 0.3))
             .map((user, index) => (
-              <tr key={user.id} className={index % 2 === 0 ? "bg-purple-100" : "bg-purple-200"}>
+              <tr key={user.id} className={user.name === "Jason" ? "bg-yellow-300" : index % 2 === 0 ? "bg-purple-100" : "bg-purple-200"}>
                 <td className="p-3 text-center font-medium">{index + 1}</td>
                 <td className="p-3 text-center">{user.name}</td>
                 <td className="p-3 text-center">{user.yogaSessions}</td>
@@ -60,7 +61,7 @@ const Leaderboard: React.FC = () => {
           {leaderboardData
             .sort((a, b) => b.exerciseHours - a.exerciseHours)
             .map((user, index) => (
-              <tr key={user.id} className={index % 2 === 0 ? "bg-green-100" : "bg-green-200"}>
+              <tr key={user.id} className={user.name === "Jason" ? "bg-yellow-300" : index % 2 === 0 ? "bg-green-100" : "bg-green-200"}>
                 <td className="p-3 text-center font-medium">{index + 1}</td>
                 <td className="p-3 text-center">{user.name}</td>
                 <td className="p-3 text-center">{user.exerciseHours}</td>

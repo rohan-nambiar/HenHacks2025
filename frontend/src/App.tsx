@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import ExerciseTracker from './ExerciseTracker';
 import YogaPoseMatcher from './exercises/YogaPoseMatcher';
 import Leaderboard from './Leaderboard';
+import PhysicalTherapy from './PhysicalTherapy';
 
 
 const App: React.FC = () => {
@@ -13,10 +14,10 @@ const App: React.FC = () => {
           <ul className="max-w-5xl mx-auto flex justify-center gap-10 py-5">
             <li>
               <Link
-                to="/"
+                to="/physical-therapy"
                 className="text-xl font-bold text-gray-800 hover:text-indigo-600 transition-colors"
               >
-                Exercise Tracker
+                Physical Therapy
               </Link>
             </li>
             <li>
@@ -24,7 +25,15 @@ const App: React.FC = () => {
                 to="/yoga-pose"
                 className="text-xl font-bold text-gray-800 hover:text-indigo-600 transition-colors"
               >
-                Yoga Pose Matcher
+                Yoga Matcher
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/"
+                className="text-xl font-bold text-gray-800 hover:text-indigo-600 transition-colors"
+              >
+                Exercise 
               </Link>
             </li>
             <li>
@@ -42,7 +51,8 @@ const App: React.FC = () => {
             <Routes>
               <Route path="/" element={<ExerciseTracker />} />
               <Route path="/yoga-pose" element={<YogaPoseMatcher />} />
-              <Route path="/leaderboard" element={<Leaderboard/>} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/physical-therapy" element={<PhysicalTherapy />} />
             </Routes>
           </div>
         </main>
