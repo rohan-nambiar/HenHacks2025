@@ -1,0 +1,145 @@
+import React, { useRef, useEffect, useState } from 'react';
+import { Pose, POSE_CONNECTIONS, Results } from '@mediapipe/pose';
+import * as cam from '@mediapipe/camera_utils';
+import { drawConnectors, drawLandmarks } from '@mediapipe/drawing_utils';
+
+export interface PushupTrackerProps {
+  onRepCountChange?: (count: number) => void;
+}
+
+const PushupTracker: React.FC<PushupTrackerProps> = ({ onRepCountChange }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const leftAngleSmoothingRef = useRef<number | null>(null);
+  const rightAngleSmoothingRef = useRef<number | null>(null);
+  const alpha = 0.65;
+
+  const [repCount, setRepCount] = useState<number>(0);
+  const repCountRef = useRef<number>(0);
+  const [phase, setPhase] = useState<"up" | "down">("up");
+  const phaseRef = useRef<"up" | "down">("up");
+
+  // Update the repCountRef and notify parent when repCount changes.
+  useEffect(() => {
+    repCountRef.current = repCount;
+    if (onRepCountChange) {
+      onRepCountChange(repCount);
+    }
+  }, [repCount, onRepCountChange]);
+
+  // Push-up joints (landmark indexes).
+  const pushupJoints = {
+    left: { shoulder: 11, elbow: 13, wrist: 15 },
+    right: { shoulder: 12, elbow: 14, wrist: 16 },
+  };
+
+  const minAngle = 80;
+  const maxAngle = 160;
+
+  const calculateAngle = (A: any, B: any, C: any): number => {
+    const radians =
+      Math.atan2(C.y - B.y, C.x - B.x) - Math.atan2(A.y - B.y, A.x - B.x);
+    let angle = Math.abs(radians * (180 / Math.PI));
+    if (angle > 180) angle = 360 - angle;
+    return angle;
+  };
+
+  // Initialize MediaPipe Pose and camera only once.
+  useEffect(() => {
+    if (!videoRef.current) return;
+    const pose = new Pose({
+      locateFile: (file) =>
+        `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
+    });
+    pose.setOptions({
+      modelComplexity: 1,
+      smoothLandmarks: true,
+      enableSegmentation: false,
+      smoothSegmentation: false,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5,
+    });
+    pose.onResults((results: Results) => {
+      if (!canvasRef.current || !videoRef.current) return;
+      const canvasCtx = canvasRef.current.getContext('2d');
+      if (!canvasCtx) return;
+      canvasCtx.save();
+      canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      canvasCtx.drawImage(results.image, 0, 0, canvasRef.current.width, canvasRef.current.height);
+      if (results.poseLandmarks) {
+        drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, { color: '#00FF00', lineWidth: 4 });
+        drawLandmarks(canvasCtx, results.poseLandmarks, { color: '#FF0000', lineWidth: 2 });
+      }
+      if (results.poseLandmarks) {
+        const landmarks = results.poseLandmarks;
+        const leftAngle = calculateAngle(
+          landmarks[pushupJoints.left.shoulder],
+          landmarks[pushupJoints.left.elbow],
+          landmarks[pushupJoints.left.wrist]
+        );
+        const rightAngle = calculateAngle(
+          landmarks[pushupJoints.right.shoulder],
+          landmarks[pushupJoints.right.elbow],
+          landmarks[pushupJoints.right.wrist]
+        );
+
+        if (leftAngleSmoothingRef.current === null) {
+          leftAngleSmoothingRef.current = leftAngle;
+        } else {
+          leftAngleSmoothingRef.current = alpha * leftAngle + (1 - alpha) * leftAngleSmoothingRef.current;
+        }
+        if (rightAngleSmoothingRef.current === null) {
+          rightAngleSmoothingRef.current = rightAngle;
+        } else {
+          rightAngleSmoothingRef.current = alpha * rightAngle + (1 - alpha) * rightAngleSmoothingRef.current;
+        }
+        const smoothedLeft = leftAngleSmoothingRef.current;
+        const smoothedRight = rightAngleSmoothingRef.current;
+
+        canvasCtx.fillStyle = "white";
+        canvasCtx.font = "20px Arial";
+        canvasCtx.fillText(`L: ${Math.round(smoothedLeft)} R: ${Math.round(smoothedRight)}`, 10, 60);
+
+        if (phaseRef.current === "up" && smoothedLeft < minAngle && smoothedRight < minAngle) {
+          phaseRef.current = "down";
+          setPhase("down");
+          console.log("Push-up: UP → DOWN", smoothedLeft, smoothedRight);
+        }
+        if (phaseRef.current === "down" && smoothedLeft > maxAngle && smoothedRight > maxAngle) {
+          phaseRef.current = "up";
+          setPhase("up");
+          console.log("Push-up: DOWN → UP, rep counted", smoothedLeft, smoothedRight);
+          setRepCount((prev) => prev + 1);
+        }
+      }
+      canvasCtx.fillStyle = "white";
+      canvasCtx.font = "20px Arial";
+      canvasCtx.fillText(`Push-up Count: ${repCountRef.current}`, 10, 30);
+      canvasCtx.restore();
+    });
+    const camera = new cam.Camera(videoRef.current, {
+      onFrame: async () => {
+        if (videoRef.current) await pose.send({ image: videoRef.current });
+      },
+      width: 640,
+      height: 480,
+    });
+    camera.start();
+    return () => {
+      camera.stop();
+    };
+  }, []); // Empty dependency array
+
+  const instruction = phase === "up" ? "go lower" : "go higher";
+
+  return (
+    <div style={{ textAlign: 'center' }}>
+      <h1>Push-up Tracker - {instruction}</h1>
+      <video ref={videoRef} style={{ display: 'none' }} />
+      <canvas ref={canvasRef} width={640} height={480} style={{ border: '1px solid #ccc' }} />
+    </div>
+  );
+};
+
+export default PushupTracker;
