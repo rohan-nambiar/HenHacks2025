@@ -1,0 +1,270 @@
+{
+    "nose": {
+        "index": 0,
+        "displayName": "Nose",
+        "adjacentIndexes": [
+            1,
+            4
+        ]
+    },
+    "leftEyeInner": {
+        "index": 1,
+        "displayName": "Inner Left Eye",
+        "adjacentIndexes": [
+            0,
+            2
+        ]
+    },
+    "leftEye": {
+        "index": 2,
+        "displayName": "Left Eye",
+        "adjacentIndexes": [
+            1,
+            3
+        ]
+    },
+    "leftEyeOuter": {
+        "index": 3,
+        "displayName": "Outer Left Eye",
+        "adjacentIndexes": [
+            2,
+            7
+        ]
+    },
+    "rightEyeInner": {
+        "index": 4,
+        "displayName": "Inner Right Eye",
+        "adjacentIndexes": [
+            0,
+            5
+        ]
+    },
+    "rightEye": {
+        "index": 5,
+        "displayName": "Right Eye",
+        "adjacentIndexes": [
+            4,
+            6
+        ]
+    },
+    "rightEyeOuter": {
+        "index": 6,
+        "displayName": "Outer Right Eye",
+        "adjacentIndexes": [
+            5,
+            8
+        ]
+    },
+    "leftEar": {
+        "index": 7,
+        "displayName": "Left Ear",
+        "adjacentIndexes": [
+            3
+        ]
+    },
+    "rightEar": {
+        "index": 8,
+        "displayName": "Right Ear",
+        "adjacentIndexes": [
+            6
+        ]
+    },
+    "mouthLeft": {
+        "index": 9,
+        "displayName": "Mouth Leftside",
+        "adjacentIndexes": [
+            10
+        ]
+    },
+    "mouthRight": {
+        "index": 10,
+        "displayName": "Mouth Rightside",
+        "adjacentIndexes": [
+            9
+        ]
+    },
+    "leftShoulder": {
+        "index": 11,
+        "displayName": "Left Shoulder",
+        "adjacentIndexes": [
+            12,
+            13,
+            23
+        ]
+    },
+    "rightShoulder": {
+        "index": 12,
+        "displayName": "Right Shourder",
+        "adjacentIndexes": [
+            11,
+            14,
+            24
+        ]
+    },
+    "leftElbow": {
+        "index": 13,
+        "displayName": "Left Elbow",
+        "adjacentIndexes": [
+            11,
+            15
+        ]
+    },
+    "rightElbow": {
+        "index": 14,
+        "displayName": "Right Elbow",
+        "adjacentIndexes": [
+            12,
+            16
+        ]
+    },
+    "leftWrist": {
+        "index": 15,
+        "displayName": "Left Wrist",
+        "adjacentIndexes": [
+            13,
+            17,
+            19,
+            21
+        ]
+    },
+    "rightWrist": {
+        "index": 16,
+        "displayName": "Right Wrist",
+        "adjacentIndexes": [
+            14,
+            18,
+            20,
+            22
+        ]
+    },
+    "leftPinky": {
+        "index": 17,
+        "displayName": "Left Pinky",
+        "adjacentIndexes": [
+            15,
+            19
+        ]
+    },
+    "rightPinky": {
+        "index": 18,
+        "displayName": "Right Pinky",
+        "adjacentIndexes": [
+            16,
+            20
+        ]
+    },
+    "leftIndex": {
+        "index": 19,
+        "displayName": "Left Index Finger",
+        "adjacentIndexes": [
+            15,
+            17
+        ]
+    },
+    "rightIndex": {
+        "index": 20,
+        "displayName": "Right Index Finger",
+        "adjacentIndexes": [
+            18,
+            26
+        ]
+    },
+    "leftThumb": {
+        "index": 21,
+        "displayName": "Left Thumb",
+        "adjacentIndexes": [
+            15
+        ]
+    },
+    "rightThumb": {
+        "index": 22,
+        "displayName": "Right Thumb",
+        "adjacentIndexes": [
+            16
+        ]
+    },
+    "left_hip": {
+        "index": 23,
+        "displayName": "Left Hip",
+        "adjacentIndexes": [
+            11,
+            24,
+            25
+        ]
+    },
+    "right_hip": {
+        "index": 24,
+        "displayName": "Right Hip",
+        "adjacentIndexes": [
+            12,
+            23,
+            26
+        ]
+    },
+    "left_knee": {
+        "index": 25,
+        "displayName": "Left Knee",
+        "adjacentIndexes": [
+            23,
+            27
+        ]
+    },
+    "right_knee": {
+        "index": 26,
+        "displayName": "Right Knee",
+        "adjacentIndexes": [
+            24,
+            28
+        ]
+    },
+    "left_ankle": {
+        "index": 27,
+        "displayName": "Left Ankle",
+        "adjacentIndexes": [
+            25,
+            29,
+            31
+        ]
+    },
+    "right_ankle": {
+        "index": 28,
+        "displayName": "Right Ankle",
+        "adjacentIndexes": [
+            26,
+            30,
+            32
+        ]
+    },
+    "left_heel": {
+        "index": 29,
+        "displayName": "Left Heel",
+        "adjacentIndexes": [
+            27,
+            31
+        ]
+    },
+    "right_heel": {
+        "index": 30,
+        "displayName": "Right Heel",
+        "adjacentIndexes": [
+            28,
+            32
+        ]
+    },
+    "left_foot_index": {
+        "index": 31,
+        "displayName": "Left Foot Index",
+        "adjacentIndexes": [
+            27,
+            29
+        ]
+    },
+    "right_foot_index": {
+        "index": 32,
+        "displayName": "Right Foot Inde",
+        "adjacentIndexes": [
+            28,
+            30
+        ]
+    }
+}
