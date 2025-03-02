@@ -104,6 +104,7 @@ const YogaPoseMatcher: React.FC = () => {
     currentLandmarksRef.current = currentLandmarks;
   }, [currentLandmarks]);
 
+
   // Feedback and score state.
   const [feedback, setFeedback] = useState<string[]>([]);
   const [matchScore, setMatchScore] = useState<number>(100);
@@ -124,6 +125,8 @@ const YogaPoseMatcher: React.FC = () => {
     }, 200); // 200ms delay
     return () => clearInterval(interval);
   }, []);
+
+  console.log(feedback + "" + currentAngles);
 
   // Initialize MediaPipe Pose and camera (run once on mount).
   useEffect(() => {
