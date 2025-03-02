@@ -12,7 +12,7 @@ const ExerciseTracker: React.FC = () => {
   };
 
   return (
-    <div className="mx-auto w-full max-w-3xl bg-white rounded-xl shadow-md p-8 mt-8 text-center">
+    <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-8 my-8">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">AI Physical Therapy Coach</h1>
 
       <div className="mb-4">
@@ -36,20 +36,17 @@ const ExerciseTracker: React.FC = () => {
           <option value="lunge">Lunge</option>
         </select>
       </div>
-
-      <div className="text-2xl font-semibold text-blue-700 mb-6">
-        {selectedExercise} Count: {repCount}
+      <div className="border border-gray-300 rounded-lg overflow-hidden">
+        {selectedExercise === "squat" && (
+          <SquatTracker onRepCountChange={handleRepCountChange} />
+        )}
+        {selectedExercise === "pushup" && (
+          <PushupTracker onRepCountChange={handleRepCountChange} />
+        )}
+        {selectedExercise === "lunge" && (
+          <LungeTracker onRepCountChange={handleRepCountChange} />
+        )}
       </div>
-
-      {selectedExercise === "squat" && (
-        <SquatTracker onRepCountChange={handleRepCountChange} />
-      )}
-      {selectedExercise === "pushup" && (
-        <PushupTracker onRepCountChange={handleRepCountChange} />
-      )}
-      {selectedExercise === "lunge" && (
-        <LungeTracker onRepCountChange={handleRepCountChange} />
-      )}
     </div>
   );
 };

@@ -126,9 +126,9 @@ const LungeTracker: React.FC<LungeTrackerProps> = ({ onRepCountChange }) => {
   const instruction = phase === "up" ? "Go Lower" : "Go Higher";
 
   return (
-    <div style={{ textAlign: 'center' }}>
-      <h2>Lunge Count: {repCountRef.current}</h2>
-      <h2>Advice: {instruction}</h2>
+    <div style={{ textAlign: 'center', paddingLeft: '35px' }}>
+      <div className="text-2xl font-semibold text-blue-700 mb-6">Lunge Count: {repCountRef.current}</div>
+      <div className="text-2xl font-semibold text-red-700 mb-6">Advice: {instruction}</div>
       <video ref={videoRef} style={{ display: 'none' }} />
       <canvas ref={canvasRef} width={640} height={480} style={{ border: '1px solid #ccc' }} />
     </div>
