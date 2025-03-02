@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import ExerciseTracker from './ExerciseTracker';
 import YogaPoseMatcher from './exercises/YogaPoseMatcher';
+import Leaderboard from './Leaderboard';
 
 
 const App: React.FC = () => {
@@ -26,6 +27,14 @@ const App: React.FC = () => {
                 Yoga Pose Matcher
               </Link>
             </li>
+            <li>
+              <Link
+                to="/leaderboard"
+                className="text-xl font-bold text-gray-800 hover:text-indigo-600 transition-colors"
+              >
+                Leaderboard
+              </Link>
+            </li>
           </ul>
         </nav>
         <main className="flex-1 flex flex-col items-center px-4 py-8">
@@ -33,6 +42,7 @@ const App: React.FC = () => {
             <Routes>
               <Route path="/" element={<ExerciseTracker />} />
               <Route path="/yoga-pose" element={<YogaPoseMatcher />} />
+              <Route path="/leaderboard" element={<Leaderboard/>} />
             </Routes>
           </div>
         </main>
