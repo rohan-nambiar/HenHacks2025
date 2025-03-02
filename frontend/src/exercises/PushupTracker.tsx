@@ -137,7 +137,7 @@ const PushupTracker: React.FC<PushupTrackerProps> = ({ onRepCountChange }) => {
       <div className="text-2xl font-semibold text-blue-700 mb-6">Push-up Count: {repCountRef.current}</div>
       <div className="text-2xl font-semibold text-red-700 mb-6">Advice: {instruction}</div>
       <video ref={videoRef} style={{ display: 'none' }} />
-      <canvas ref={canvasRef} width={640} height={480} style={{ border: '1px solid #ccc' }} />
+      <canvas ref={canvasRef} width={640} height={480} className="w-full" />
     </div>
   );
 };
