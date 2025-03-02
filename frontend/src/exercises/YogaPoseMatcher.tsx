@@ -1,9 +1,11 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Pose, POSE_CONNECTIONS, Results } from '@mediapipe/pose';
 import * as cam from '@mediapipe/camera_utils';
 import { drawConnectors, drawLandmarks } from '@mediapipe/drawing_utils';
+// Import your BlazePose model JSON data
+import modelData from '../data/BlazePoseModel.json';
 
-// Helper function to calculate an angle between three landmarks (vertex at B).
+// Helper: calculate an angle (with vertex at B)
 const calculateAngle = (A: any, B: any, C: any): number => {
   const radians =
     Math.atan2(C.y - B.y, C.x - B.x) - Math.atan2(A.y - B.y, A.x - B.x);
@@ -12,19 +14,7 @@ const calculateAngle = (A: any, B: any, C: any): number => {
   return angle;
 };
 
-// Define joints for scoring using landmark indexes.
-const angleJoints: { [key: string]: [number, number, number] } = {
-  rightElbow: [16, 14, 12],
-  rightShoulder: [14, 12, 24],
-  leftShoulder: [23, 11, 13],
-  leftElbow: [11, 13, 15],
-  rightHip: [12, 24, 26],
-  rightKnee: [24, 26, 28],
-  leftHip: [11, 23, 25],
-  leftKnee: [23, 25, 27]
-};
-
-// Helper to compute Euclidean distance.
+// Helper: compute Euclidean distance.
 const distance = (a: any, b: any): number => {
   return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
 };
@@ -68,32 +58,74 @@ const transformLandmarks = (
   });
 };
 
+// Define joints for feedback using landmark indexes.
+const angleJoints: { [key: string]: [number, number, number] } = {
+  rightElbow: [16, 14, 12],
+  rightShoulder: [14, 12, 24],
+  leftShoulder: [23, 11, 13],
+  leftElbow: [11, 13, 15],
+  rightHip: [12, 24, 26],
+  rightKnee: [24, 26, 28],
+  leftHip: [11, 23, 25],
+  leftKnee: [23, 25, 27]
+};
+
+// Define weights for each joint.
+const jointWeights: { [key: string]: number } = {
+  rightElbow: 1.5,
+  leftElbow: 1.5,
+  rightShoulder: 1.0,
+  leftShoulder: 1.0,
+  rightHip: 1.0,
+  leftHip: 1.0,
+  rightKnee: 1.5,
+  leftKnee: 1.5
+};
+
+// Threshold (in degrees) for feedback.
+const angleThreshold = 10;
+
 const YogaPoseMatcher: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // State for saved reference pose.
-  const [referenceAngles, setReferenceAngles] = useState<{ [key: string]: number } | null>(null);
-  const [referenceLandmarks, setReferenceLandmarks] = useState<any[] | null>(null);
+  // Saved reference pose (state and ref).
+  const [savedPose, setSavedPose] = useState<{ landmarks: any[] } | null>(null);
+  const savedPoseRef = useRef<{ landmarks: any[] } | null>(null);
+  useEffect(() => {
+    savedPoseRef.current = savedPose;
+  }, [savedPose]);
 
   // Live pose state.
-  const [matchScore, setMatchScore] = useState<number>(0);
   const [currentAngles, setCurrentAngles] = useState<{ [key: string]: number }>({});
   const [currentLandmarks, setCurrentLandmarks] = useState<any[] | null>(null);
-
-  // Refs to hold the latest values.
-  const referenceAnglesRef = useRef<{ [key: string]: number } | null>(null);
-  const referenceLandmarksRef = useRef<any[] | null>(null);
   const currentLandmarksRef = useRef<any[] | null>(null);
-  useEffect(() => {
-    referenceAnglesRef.current = referenceAngles;
-    referenceLandmarksRef.current = referenceLandmarks;
-  }, [referenceAngles, referenceLandmarks]);
   useEffect(() => {
     currentLandmarksRef.current = currentLandmarks;
   }, [currentLandmarks]);
 
-  // Initialize Pose and camera once.
+  // Feedback and score state.
+  const [feedback, setFeedback] = useState<string[]>([]);
+  const [matchScore, setMatchScore] = useState<number>(100);
+  // Smoothed error state.
+  const [smoothedError, setSmoothedError] = useState<number>(0);
+  const smoothingFactor = 0.8;
+
+  // Ref to hold the computed score.
+  const currentScoreRef = useRef<number>(100);
+
+  // Ref to hold the latest live pose for saving reference.
+  const latestPoseRef = useRef<{ landmarks: any[] } | null>(null);
+
+  // Throttle score updates: update matchScore state every 200ms.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMatchScore(currentScoreRef.current);
+    }, 200); // 200ms delay
+    return () => clearInterval(interval);
+  }, []);
+
+  // Initialize MediaPipe Pose and camera (run once on mount).
   useEffect(() => {
     if (!videoRef.current) return;
     const pose = new Pose({
@@ -108,80 +140,110 @@ const YogaPoseMatcher: React.FC = () => {
       minTrackingConfidence: 0.5,
     });
     pose.onResults((results: Results) => {
-      if (!canvasRef.current || !videoRef.current || !results.poseLandmarks) return;
-      const canvasCtx = canvasRef.current.getContext('2d');
-      if (!canvasCtx) return;
+      if (!results.poseLandmarks || !canvasRef.current || !videoRef.current) return;
+      // Save latest pose for reference saving.
+      latestPoseRef.current = { landmarks: results.poseLandmarks };
 
-      canvasCtx.save();
-      // Draw the video frame.
-      canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-      canvasCtx.drawImage(results.image, 0, 0, canvasRef.current.width, canvasRef.current.height);
+      const ctx = canvasRef.current.getContext('2d');
+      if (!ctx) return;
+      ctx.save();
+      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      ctx.drawImage(results.image, 0, 0, canvasRef.current.width, canvasRef.current.height);
+      drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, { color: '#00FF00', lineWidth: 4 });
+      drawLandmarks(ctx, results.poseLandmarks, { color: '#FF0000', lineWidth: 2 });
+      ctx.restore();
 
-      // Draw live pose.
-      drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, { color: '#00FF00', lineWidth: 4 });
-      drawLandmarks(canvasCtx, results.poseLandmarks, { color: '#FF0000', lineWidth: 2 });
-
-      // Update live landmarks and angles.
+      // Update live landmarks and compute live joint angles.
       setCurrentLandmarks(results.poseLandmarks);
-      const angles: { [key: string]: number } = {};
-      Object.entries(angleJoints).forEach(([jointName, [iA, iB, iC]]) => {
+      const liveAngles: { [key: string]: number } = {};
+      Object.entries(angleJoints).forEach(([joint, [iA, iB, iC]]) => {
         if (results.poseLandmarks[iA] && results.poseLandmarks[iB] && results.poseLandmarks[iC]) {
-          angles[jointName] = calculateAngle(
+          liveAngles[joint] = calculateAngle(
             results.poseLandmarks[iA],
             results.poseLandmarks[iB],
             results.poseLandmarks[iC]
           );
         }
       });
-      setCurrentAngles(angles);
+      setCurrentAngles(liveAngles);
 
-      // Display match score if reference exists.
-      if (referenceAnglesRef.current) {
-        let totalScore = 0;
-        let count = 0;
-        Object.keys(angleJoints).forEach((jointName) => {
-          if (angles[jointName] !== undefined && referenceAnglesRef.current![jointName] !== undefined) {
-            const diff = Math.abs(angles[jointName] - referenceAnglesRef.current![jointName]);
-            const jointScore = Math.max(0, (1 - diff / 30)) * 100;
-            totalScore += jointScore;
-            count++;
+      // If a saved pose exists, compare each joint.
+      if (savedPoseRef.current) {
+        let totalError = 0;
+        let totalWeight = 0;
+        const newFeedback: string[] = [];
+
+        Object.entries(angleJoints).forEach(([joint, indices]) => {
+          if (liveAngles[joint] !== undefined) {
+            const refAngle = calculateAngle(
+              savedPoseRef.current!.landmarks[indices[0]],
+              savedPoseRef.current!.landmarks[indices[1]],
+              savedPoseRef.current!.landmarks[indices[2]]
+            );
+            const liveAngle = liveAngles[joint];
+            const diff = liveAngle - refAngle; // positive if live is higher.
+            const weight = jointWeights[joint] || 1.0;
+            totalError += Math.abs(diff) * weight;
+            totalWeight += weight;
+
+            if (Math.abs(diff) > angleThreshold) {
+              const jointData = (modelData as any)[joint];
+              const name = jointData ? jointData.displayName : joint;
+              newFeedback.push(diff < 0 ? `Increase angle for ${name}` : `Decrease angle for ${name}`);
+            }
           }
         });
-        const averageScore = count > 0 ? totalScore / count : 0;
-        setMatchScore(Math.round(averageScore));
-        canvasCtx.fillStyle = "white";
-        canvasCtx.font = "20px Arial";
-        canvasCtx.fillText(`Match Score: ${Math.round(averageScore)}%`, 10, 30);
+
+        const avgError = totalWeight > 0 ? totalError / totalWeight : 0;
+        // Smooth the error.
+        const newSmoothedError = smoothingFactor * smoothedError + (1 - smoothingFactor) * avgError;
+        setSmoothedError(newSmoothedError);
+        // Adjust multiplier as needed; here, multiplier = 5.
+        const score = Math.max(0, 100 - newSmoothedError * 5);
+        currentScoreRef.current = Math.round(score);
+        setFeedback(newFeedback);
+
+        ctx.save();
+        ctx.fillStyle = "white";
+        ctx.font = "20px Arial";
+        ctx.fillText(`Match Score: ${Math.round(score)}%`, 10, 30);
+        ctx.restore();
       } else {
-        canvasCtx.fillStyle = "white";
-        canvasCtx.font = "20px Arial";
-        canvasCtx.fillText("No reference pose saved", 10, 30);
+        const ctx2 = canvasRef.current.getContext('2d');
+        if (ctx2) {
+          ctx2.save();
+          ctx2.fillStyle = "white";
+          ctx2.font = "20px Arial";
+          ctx2.fillText("No reference pose saved", 10, 30);
+          ctx2.restore();
+        }
       }
 
-      // Overlay the saved reference pose transformed to match current shoulders.
-      if (referenceLandmarksRef.current) {
-        // Assuming left shoulder = index 11, right shoulder = index 12.
-        const savedLeft = referenceLandmarksRef.current[11];
-        const savedRight = referenceLandmarksRef.current[12];
+      // Overlay the saved reference pose.
+      if (savedPoseRef.current) {
+        const savedLandmarks = savedPoseRef.current.landmarks;
+        // Assuming left shoulder = index 11 and right shoulder = index 12.
+        const savedLeft = savedLandmarks[11];
+        const savedRight = savedLandmarks[12];
         const currentLeft = results.poseLandmarks[11];
         const currentRight = results.poseLandmarks[12];
         if (savedLeft && savedRight && currentLeft && currentRight) {
           const transformedReference = transformLandmarks(
-            referenceLandmarksRef.current,
+            savedLandmarks,
             savedLeft,
             savedRight,
             currentLeft,
             currentRight
           );
-          drawConnectors(canvasCtx, transformedReference, POSE_CONNECTIONS, { color: '#0000FF', lineWidth: 2 });
-          drawLandmarks(canvasCtx, transformedReference, { color: '#0000FF', lineWidth: 1 });
-          canvasCtx.fillStyle = "#0000FF";
-          canvasCtx.font = "20px Arial";
-          canvasCtx.fillText("Reference Pose Overlay", 10, 60);
+          ctx.save();
+          drawConnectors(ctx, transformedReference, POSE_CONNECTIONS, { color: '#0000FF', lineWidth: 2 });
+          drawLandmarks(ctx, transformedReference, { color: '#0000FF', lineWidth: 1 });
+          ctx.fillStyle = "#0000FF";
+          ctx.font = "20px Arial";
+          ctx.fillText("Reference Pose Overlay", 10, 60);
+          ctx.restore();
         }
       }
-
-      canvasCtx.restore();
     });
 
     const camera = new cam.Camera(videoRef.current, {
@@ -195,17 +257,13 @@ const YogaPoseMatcher: React.FC = () => {
     return () => {
       camera.stop();
     };
-  }, []); // Run once.
+  }, []); // Run once on mount
 
   // Save the current pose as reference.
   const savePose = () => {
     if (currentLandmarksRef.current && currentLandmarksRef.current.length > 0) {
       console.log("Saving current pose as reference.");
-      setReferenceLandmarks([...currentLandmarksRef.current]);
-      setReferenceAngles({ ...currentAngles });
-      // Also update refs.
-      referenceLandmarksRef.current = [...currentLandmarksRef.current];
-      referenceAnglesRef.current = { ...currentAngles };
+      setSavedPose({ landmarks: [...currentLandmarksRef.current] });
     } else {
       console.warn("No valid landmarks to save.");
     }
@@ -224,7 +282,7 @@ const YogaPoseMatcher: React.FC = () => {
         </button>
       </div>
       <div className="mb-4 text-xl text-gray-700">
-        {referenceLandmarks ? "Reference Pose Saved" : "No Reference Pose Saved"}
+        {savedPose ? "Reference Pose Saved" : "No Reference Pose Saved"}
       </div>
       <div className="mb-4 text-xl text-gray-700">
         Current Match Score: {matchScore}%
