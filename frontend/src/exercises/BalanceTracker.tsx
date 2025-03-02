@@ -85,6 +85,8 @@ const jointWeights: { [key: string]: number } = {
 // Threshold (in degrees) for feedback.
 const angleThreshold = 10;
 
+
+
 const BalanceTracker: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
