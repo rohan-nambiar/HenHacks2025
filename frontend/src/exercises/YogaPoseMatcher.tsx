@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { flushSync } from 'react-dom';
+import Select from 'react-select';
 import { Pose, POSE_CONNECTIONS, Results } from '@mediapipe/pose';
 import * as cam from '@mediapipe/camera_utils';
 import { drawConnectors, drawLandmarks } from '@mediapipe/drawing_utils';
@@ -85,6 +87,14 @@ const jointWeights: { [key: string]: number } = {
 // Threshold (in degrees) for feedback.
 const angleThreshold = 10;
 
+const getObjectFromLocalStorage = (key: string): any | null => {
+  const item = localStorage.getItem(key);
+  if (item) {
+      return JSON.parse(item);
+  }
+  return null;
+};
+
 const YogaPoseMatcher: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -93,7 +103,10 @@ const YogaPoseMatcher: React.FC = () => {
   const [savedPose, setSavedPose] = useState<{ landmarks: any[] } | null>(null);
   const savedPoseRef = useRef<{ landmarks: any[] } | null>(null);
   const [savePoseButtonDisabled, setSavePostButtonDisabled] = useState<boolean>(false);
-  
+  const myObject = getObjectFromLocalStorage("allYogaPose");
+  const [poseOptions, setPoseOptions] = useState<{ value: any[]; label: string}[] | null>(myObject || []);
+  const [poseOptionSelected, setPoseOptionSelected] = useState<{ value: any[]; label: string} | null>(null);
+
   // Timer state for countdown text.
   const [timerText, setTimerText] = useState<string>("");
   const [showTimer, setShowTimer] = useState<boolean>(false);
@@ -131,7 +144,7 @@ const YogaPoseMatcher: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  console.log(feedback + "" + currentAngles);
+  // console.log(feedback + "" + currentAngles);
 
   // Initialize MediaPipe Pose and camera (run once on mount).
   useEffect(() => {
@@ -270,11 +283,37 @@ const YogaPoseMatcher: React.FC = () => {
   const saveRef = (item: any) => {
     if (item && item.length > 0) {
       console.log("Saving current pose as reference.");
-      setSavedPose({ landmarks: item });
+      //prompt user to enter a name for the pose and add it to the dropdown option
+      let newPostLabel = window.prompt("Enter a name for the new pose");
+      if (newPostLabel) {
+        setSavedPose({ landmarks: item });
+        setPoseOptions((prev) => [...prev, { value: item, label: newPostLabel }]);
+        // add the new pose to local storage for persistence
+        localStorage.setItem("allYogaPose", JSON.stringify([...poseOptions, { value: item, label: newPostLabel }]));
+        setPoseOptionSelected({ value: item, label: newPostLabel });
+      }
     } else {
       console.warn("No valid landmarks to save.");
     }
   }
+
+  const setPoseReference = (selected: any) => {
+    if (!selected) return;
+    console.info("onchange", selected);
+    setPoseOptionSelected(selected);
+    setSavedPose({ landmarks: selected.value });
+  };
+
+  // Delete a saved pose.
+  const deletePose = (selected: any) => {
+    if (!selected || !poseOptions || poseOptions.length==0) return;
+    const newPoseOptions = poseOptions.filter((option) => option.value !== selected.value);
+    setPoseOptions(newPoseOptions);
+    // remove the pose from local storage
+    localStorage.setItem("allYogaPose", JSON.stringify(newPoseOptions));
+    setSavedPose(null);
+    setPoseOptionSelected(null);
+  };
 
   // Save the current pose as reference with an optional delay.
   const savePose = (delay: number) => {
@@ -292,11 +331,10 @@ const YogaPoseMatcher: React.FC = () => {
           setTimerText(`${count}`);
         } else if (count === 0) {
           setTimerText(`Snap!`);
-          saveRef(currentLandmarksRef.current);
-          setSavePostButtonDisabled(false);
-        } else if (count < 0) {
           clearInterval(interval);
           setShowTimer(false);
+          saveRef(currentLandmarksRef.current);  
+          setSavePostButtonDisabled(false);
         }
       }, 1000);
     }
@@ -332,7 +370,23 @@ const YogaPoseMatcher: React.FC = () => {
         >
           Wait 10 Secs
         </button>
-
+        <button
+          onClick={deletePose.bind(null, poseOptionSelected)}
+          disabled={!poseOptionSelected}
+          className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded"
+        >
+          Delete selected Pose
+        </button>
+        <Select
+          name="selectedPose"
+          isSearchable={true}
+          classNamePrefix="select"
+          className="bg-green-600 hover:bg-green-700 py-2 px-4 rounded"
+          options={poseOptions}
+          value={poseOptionSelected}
+          onChange={(selected) => setPoseReference(selected)}
+          placeholder="Select a pose as reference"
+          />
       </div>
       {/* Overlay the countdown on top of the canvas */}
       <div className="border border-gray-300 rounded-lg overflow-hidden relative">
