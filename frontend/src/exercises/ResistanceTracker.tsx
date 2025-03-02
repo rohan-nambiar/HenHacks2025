@@ -30,12 +30,6 @@ const PushupTracker: React.FC<PushupTrackerProps> = ({ onRepCountChange }) => {
     }
   }, [repCount, onRepCountChange]);
 
-  // Push-up joints (landmark indexes).
-  const pushupJoints = {
-    left: { shoulder: 11, elbow: 13, wrist: 15 },
-    right: { shoulder: 12, elbow: 14, wrist: 16 },
-  };
-
   const minAngle = 80;
   const maxAngle = 160;
 
